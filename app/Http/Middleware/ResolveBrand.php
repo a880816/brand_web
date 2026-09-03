@@ -1,0 +1,4 @@
+<?php
+namespace App\Http\Middleware;
+use App\Models\Brand; use App\Support\BrandContext; use Closure; use Illuminate\Http\Request; use Symfony\Component\HttpFoundation\Response;
+class ResolveBrand { public function __construct(private BrandContext $context){} public function handle(Request $request, Closure $next): Response { $host=strtolower(explode(':',$request->getHost())[0]); $slug=match($host){'brand-a.localhost'=>'verdant','brand-b.localhost'=>'terracotta',default=>null}; $brand=Brand::query()->where('status','active')->where(function($q)use($host,$slug){$q->where('domain',$host); if($slug)$q->orWhere('slug',$slug);})->first(); if(!$brand && in_array($host,['localhost','127.0.0.1'],true))$brand=Brand::where('slug','verdant')->where('status','active')->first(); abort_unless($brand,404); $this->context->set($brand); app('view')->share('brand',$brand); return $next($request); } }

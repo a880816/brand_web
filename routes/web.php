@@ -1,0 +1,3 @@
+<?php
+use App\Http\Controllers\SiteController; use Illuminate\Support\Facades\Route;
+Route::middleware('brand')->group(function(){Route::get('/',[SiteController::class,'home'])->name('home'); Route::get('/about',[SiteController::class,'about'])->name('about'); Route::get('/services',[SiteController::class,'services'])->name('services.index'); Route::get('/services/{slug}',[SiteController::class,'service'])->name('services.show'); Route::get('/courses',[SiteController::class,'courses'])->name('courses.index'); Route::get('/courses/{slug}',[SiteController::class,'course'])->name('courses.show'); Route::fallback(fn()=>abort(404));});
