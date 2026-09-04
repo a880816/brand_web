@@ -7,6 +7,7 @@ class DatabaseSeeder extends Seeder {
    ['name'=>'蕨光植研','slug'=>'verdant','domain'=>'brand-a.localhost','primary_color'=>'#315c45','secondary_color'=>'#91aa96','accent_color'=>'#d4a85f','background_color'=>'#f4f1e8','text_color'=>'#17231c','theme_settings'=>['eyebrow'=>'VERDANT BOTANICAL STUDIO','hero_title'=>'把一方綠意，安放進生活','hero_note'=>'植栽設計・空間養護・植物手作課'],'seo_title'=>'蕨光植研｜城市裡的植物生活提案','seo_description'=>'以合宜的植物、日常可行的照顧方式，陪你打造長久生長的綠意空間。'],
    ['name'=>'土日植所','slug'=>'terracotta','domain'=>'brand-b.localhost','primary_color'=>'#8b4d35','secondary_color'=>'#c8956e','accent_color'=>'#5d7760','background_color'=>'#f7eee5','text_color'=>'#30221c','theme_settings'=>['eyebrow'=>'TERRA & LEAF','hero_title'=>'讓植物與器物，慢慢成為日常','hero_note'=>'盆器選植・居家佈置・季節課程'],'seo_title'=>'土日植所｜植物與手作器物','seo_description'=>'從植物、土壤到手作器皿，建立有溫度的居家綠景。']];
   foreach($brands as $i=>$data){
+   if(Brand::where('slug',$data['slug'])->exists())continue;
    $brand=Brand::create($data+['status'=>'active']);
    $home=Page::create(['brand_id'=>$brand->id,'type'=>'home','title'=>'首頁','slug'=>'home','excerpt'=>$i?'用植物與土的質地，收藏每個緩慢生長的片刻。':'依照光線、空間與生活節奏，找到真正適合你的植物。','body'=>'我們相信植物不是短暫的裝飾，而是一段能被理解、照顧與共同成長的關係。從初次選植到日常養護，提供清楚而溫柔的陪伴。','status'=>'published','published_at'=>now()]);
    $about=Page::create(['brand_id'=>$brand->id,'type'=>'about','title'=>'關於我們','slug'=>'about','excerpt'=>'從一株植物開始，重新感受空間與季節。','body'=>"我們是一間以植物生活為核心的小型工作室。團隊關注台灣居住環境的光線、濕度與使用習慣，挑選適合長期相處的植栽，也重視每一次服務之後，主人是否知道如何繼續照顧。\n\n我們使用清楚的照顧筆記、適度的回訪，以及能被日常執行的建議，讓綠意真正留在生活裡。",'status'=>'published','published_at'=>now()]);
@@ -15,5 +16,6 @@ class DatabaseSeeder extends Seeder {
    foreach([['instagram','Instagram','https://www.instagram.com/'],['facebook','Facebook','https://www.facebook.com/']] as $n=>$l)$brand->links()->create(['type'=>$l[0],'label'=>$l[1],'url'=>$l[2],'sort_order'=>$n,'is_enabled'=>true]);
    foreach(array_merge([$brand,$home,$about],$services,$courses) as $owner){$collections=$owner instanceof Brand?['hero_desktop','hero_mobile','gallery']:($owner instanceof Page?['hero_desktop','gallery']:['cover','gallery']); foreach($collections as $collection)for($k=0;$k<2;$k++){ $path='brands/'.$brand->id.'/'.$collection.'/'.class_basename($owner).'-'.$owner->id.'-'.$k.'.png'; Storage::disk('public')->put($path,file_get_contents(public_path('demo/botanical-studio.png'))); Media::create(['brand_id'=>$brand->id,'mediable_type'=>$owner->getMorphClass(),'mediable_id'=>$owner->id,'collection'=>$collection,'disk'=>'public','path'=>$path,'original_filename'=>'botanical-studio.png','mime_type'=>'image/png','file_size'=>filesize(public_path('demo/botanical-studio.png')),'width'=>1536,'height'=>1024,'alt_text'=>($owner->title??$owner->name??$brand->name).' 植物情境','sort_order'=>$k,'is_primary'=>$k===0]);}}
   }
+  $this->call([PageSectionSeeder::class,AdminUserSeeder::class]);
  }
 }

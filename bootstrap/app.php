@@ -11,7 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['brand' => \App\Http\Middleware\ResolveBrand::class]);
+        $middleware->alias(['brand' => \App\Http\Middleware\ResolveBrand::class,'active'=>\App\Http\Middleware\EnsureAccountActive::class,'admin.brand'=>\App\Http\Middleware\ResolveAdminBrand::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

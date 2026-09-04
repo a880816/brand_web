@@ -1,0 +1,12 @@
+<?php
+namespace App\Http\Controllers;
+use App\Models\User; use App\Services\AuditService; use Illuminate\Auth\Events\PasswordReset; use Illuminate\Http\Request; use Illuminate\Support\Facades\{Auth,Hash,Password,RateLimiter}; use Illuminate\Support\Str; use Illuminate\Validation\ValidationException;
+class AuthController extends Controller {
+ public function create(){return view('auth.login');}
+ public function store(Request $request,AuditService $audit){$data=$request->validate(['email'=>'required|email','password'=>'required|string','remember'=>'nullable|boolean']);$key=Str::lower($data['email']).'|'.$request->ip();if(RateLimiter::tooManyAttempts($key,5))throw ValidationException::withMessages(['email'=>'登入嘗試次數過多，請稍後再試。']);if(!Auth::attempt(['email'=>$data['email'],'password'=>$data['password'],'status'=>'active'],(bool)($data['remember']??false))){RateLimiter::hit($key,60);$audit->record('auth.login_failed',null,[],['email'=>Str::mask($data['email'],'*',2)]);throw ValidationException::withMessages(['email'=>'登入資料不正確。']);}RateLimiter::clear($key);$request->session()->regenerate();$request->user()->update(['last_login_at'=>now()]);$audit->record('auth.login');return redirect()->intended($request->user()->role==='member'?route('admin.profile'):route('admin.dashboard'));}
+ public function destroy(Request $request,AuditService $audit){$audit->record('auth.logout');Auth::logout();$request->session()->invalidate();$request->session()->regenerateToken();return redirect()->route('login');}
+ public function forgot(){return view('auth.forgot-password');}
+ public function emailReset(Request $request){$data=$request->validate(['email'=>'required|email']);Password::sendResetLink($data);return back()->with('status','若帳號存在，重設連結已寄出。');}
+ public function reset(Request $request,string $token){return view('auth.reset-password',['token'=>$token,'email'=>$request->query('email')]);}
+ public function updatePassword(Request $request){$data=$request->validate(['token'=>'required','email'=>'required|email','password'=>'required|confirmed|min:10']);$status=Password::reset($data,function(User $user,string $password){$user->forceFill(['password'=>Hash::make($password),'remember_token'=>Str::random(60)])->save();event(new PasswordReset($user));});if($status!==Password::PASSWORD_RESET)return back()->withErrors(['email'=>__($status)]);return redirect()->route('login')->with('status','密碼已重設，請重新登入。');}
+}
