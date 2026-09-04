@@ -37,7 +37,7 @@ class AdminContentTest extends TestCase
         [$a,$b,$admin]=$this->context();
         $this->asHost($admin)->post('/admin/pages',['brand_id'=>$b->id,'title'=>'品牌頁面','slug'=>'brand-page','type'=>'custom','status'=>'draft'])->assertRedirect();
         $this->asHost($admin)->post('/admin/services',['brand_id'=>$b->id,'name'=>'品牌服務','slug'=>'brand-service','summary'=>'摘要','status'=>'draft','sort_order'=>1])->assertRedirect();
-        $this->asHost($admin)->post('/admin/courses',['brand_id'=>$b->id,'name'=>'品牌課程','slug'=>'brand-course','summary'=>'摘要','status'=>'draft','sort_order'=>1])->assertRedirect();
+        $this->asHost($admin)->post('/admin/courses',['brand_id'=>$b->id,'name'=>'品牌課程','slug'=>'brand-course','summary'=>'摘要','sort_order'=>1,'plans'=>[['name'=>'單人方案','participants'=>1,'price'=>1000,'is_enabled'=>1]]])->assertRedirect();
         $this->assertDatabaseHas('pages',['brand_id'=>$a->id,'slug'=>'brand-page']);
         $this->assertDatabaseHas('services',['brand_id'=>$a->id,'slug'=>'brand-service']);
         $this->assertDatabaseHas('courses',['brand_id'=>$a->id,'slug'=>'brand-course']);

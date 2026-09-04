@@ -34,12 +34,24 @@ class SiteController extends Controller
 
     public function courses()
     {
-        return view('site.index', ['kind' => '課程', 'items' => $this->context->brand()->courses()->published()->orderBy('sort_order')->get(), 'route' => 'courses.show']);
+        $cutoff = now()->subMonths(config('courses.archive_after_months'));
+        $courses = $this->context->brand()->courses()->published()
+            ->where(fn ($query) => $query->whereDoesntHave('sessions')->orWhereHas('sessions', fn ($sessions) => $sessions->where('ends_at', '>=', $cutoff)))
+            ->with(['sessions' => fn ($query) => $query->where('ends_at', '>=', now())->where('status', '!=', 'cancelled')->with('registrations'), 'plans'])
+            ->orderBy('sort_order')->get()
+            ->sortBy(fn ($course) => $course->sessions->contains(fn ($session) => $session->availabilityStatus() === 'open') ? 0 : 1)
+            ->values();
+
+        return view('site.courses.index', compact('courses'));
     }
 
     public function course(string $slug)
     {
-        return view('site.detail', ['kind' => '課程', 'item' => $this->context->brand()->courses()->published()->where('slug', $slug)->firstOrFail(), 'back' => 'courses.index']);
+        $course = $this->context->brand()->courses()->published()->where('slug', $slug)
+            ->with(['plans', 'sessions' => fn ($query) => $query->where('ends_at', '>=', now())->where('status', '!=', 'cancelled')->with(['plans', 'registrations'])])
+            ->firstOrFail();
+
+        return view('site.courses.show', compact('course'));
     }
 
     public function shop() { return view('site.shop.index'); }

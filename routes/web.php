@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,DashboardController,HomepageController,MediaLibraryController,PreviewController,ProfileController,UserController};
+use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,CourseController,CourseSessionController,DashboardController,HomepageController,MediaLibraryController,PreviewController,ProfileController,UserController};
 use App\Http\Controllers\{AuthController,SiteController};
 use Illuminate\Support\Facades\Route;
 
@@ -34,17 +34,29 @@ Route::middleware('brand')->group(function () {
         Route::put('/homepage',[HomepageController::class,'update'])->name('homepage.update');
         Route::post('/homepage/publish',[HomepageController::class,'publish'])->name('homepage.publish');
         Route::get('/homepage/preview',[HomepageController::class,'preview'])->name('homepage.preview');
+        Route::get('/courses',[CourseController::class,'index'])->name('courses.index');
+        Route::get('/courses/create',[CourseController::class,'create'])->name('courses.create');
+        Route::post('/courses',[CourseController::class,'store'])->name('courses.store');
+        Route::get('/courses/{course}/edit',[CourseController::class,'edit'])->name('courses.edit');
+        Route::put('/courses/{course}',[CourseController::class,'update'])->name('courses.update');
+        Route::post('/courses/{course}/publish',[CourseController::class,'publish'])->name('courses.publish');
+        Route::post('/courses/{course}/unpublish',[CourseController::class,'unpublish'])->name('courses.unpublish');
+        Route::delete('/courses/{course}',[CourseController::class,'destroy'])->name('courses.destroy');
+        Route::get('/courses/{course}/sessions/create',[CourseSessionController::class,'create'])->name('course-sessions.create');
+        Route::post('/courses/{course}/sessions',[CourseSessionController::class,'store'])->name('course-sessions.store');
+        Route::get('/courses/{course}/sessions/{session}/edit',[CourseSessionController::class,'edit'])->name('course-sessions.edit');
+        Route::put('/courses/{course}/sessions/{session}',[CourseSessionController::class,'update'])->name('course-sessions.update');
         Route::resource('brands',BrandController::class)->except('show');
         Route::resource('users',UserController::class)->only(['index','create','store','edit','update']);
-        Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services|courses');
-        Route::get('/{resource}/create',[ContentController::class,'create'])->name('content.create')->where('resource','pages|services|courses');
-        Route::post('/{resource}',[ContentController::class,'store'])->name('content.store')->where('resource','pages|services|courses');
-        Route::get('/{resource}/{id}/edit',[ContentController::class,'edit'])->name('content.edit')->where('resource','pages|services|courses');
-        Route::put('/{resource}/{id}',[ContentController::class,'update'])->name('content.update')->where('resource','pages|services|courses');
-        Route::post('/{resource}/{id}/publish',[ContentController::class,'publish'])->name('content.publish')->where('resource','pages|services|courses');
-        Route::post('/{resource}/{id}/unpublish',[ContentController::class,'unpublish'])->name('content.unpublish')->where('resource','pages|services|courses');
-        Route::get('/{resource}/{id}/preview',PreviewController::class)->name('content.preview')->where('resource','pages|services|courses');
-        Route::delete('/{resource}/{id}',[ContentController::class,'destroy'])->name('content.destroy')->where('resource','pages|services|courses');
+        Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services');
+        Route::get('/{resource}/create',[ContentController::class,'create'])->name('content.create')->where('resource','pages|services');
+        Route::post('/{resource}',[ContentController::class,'store'])->name('content.store')->where('resource','pages|services');
+        Route::get('/{resource}/{id}/edit',[ContentController::class,'edit'])->name('content.edit')->where('resource','pages|services');
+        Route::put('/{resource}/{id}',[ContentController::class,'update'])->name('content.update')->where('resource','pages|services');
+        Route::post('/{resource}/{id}/publish',[ContentController::class,'publish'])->name('content.publish')->where('resource','pages|services');
+        Route::post('/{resource}/{id}/unpublish',[ContentController::class,'unpublish'])->name('content.unpublish')->where('resource','pages|services');
+        Route::get('/{resource}/{id}/preview',PreviewController::class)->name('content.preview')->where('resource','pages|services');
+        Route::delete('/{resource}/{id}',[ContentController::class,'destroy'])->name('content.destroy')->where('resource','pages|services');
     });
 
     Route::get('/',[SiteController::class,'home'])->name('home');
