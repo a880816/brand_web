@@ -2,7 +2,8 @@
 
 use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,CourseController,CourseSessionController,DashboardController,HomepageController,MaterialController,MediaLibraryController,PlantSpecimenController,PlantVarietyController,PreviewController,ProfileController,UserController};
 use App\Http\Controllers\Admin\CourseRegistrationController as AdminCourseRegistrationController;
-use App\Http\Controllers\{AuthController,CourseNoticeController,CourseNoticeQrController,CourseRegistrationController,SiteController};
+use App\Http\Controllers\Admin\SaleOrderController;
+use App\Http\Controllers\{AuthController,CourseNoticeController,CourseNoticeQrController,CourseRegistrationController,OrderRecipientController,SiteController};
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('brand')->group(function () {
@@ -56,6 +57,15 @@ Route::middleware('brand')->group(function () {
         Route::get('/plant-varieties/{plantVariety}/specimens/{plantSpecimen}/edit',[PlantSpecimenController::class,'edit'])->name('plant-specimens.edit');
         Route::put('/plant-varieties/{plantVariety}/specimens/{plantSpecimen}',[PlantSpecimenController::class,'update'])->name('plant-specimens.update');
         Route::resource('materials',MaterialController::class)->except(['show','destroy']);
+        Route::get('/orders',[SaleOrderController::class,'index'])->name('orders.index');
+        Route::get('/orders/create',[SaleOrderController::class,'create'])->name('orders.create');
+        Route::post('/orders',[SaleOrderController::class,'store'])->name('orders.store');
+        Route::get('/orders/{order}/edit',[SaleOrderController::class,'edit'])->name('orders.edit');
+        Route::put('/orders/{order}',[SaleOrderController::class,'update'])->name('orders.update');
+        Route::post('/orders/{order}/recipient-link',[SaleOrderController::class,'regenerate'])->name('orders.recipient-link');
+        Route::post('/orders/{order}/paid',[SaleOrderController::class,'paid'])->name('orders.paid');
+        Route::post('/orders/{order}/void',[SaleOrderController::class,'void'])->name('orders.void');
+        Route::delete('/orders/{order}',[SaleOrderController::class,'destroy'])->name('orders.destroy');
         Route::resource('brands',BrandController::class)->except('show');
         Route::resource('users',UserController::class)->only(['index','create','store','edit','update']);
         Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services');
@@ -80,6 +90,8 @@ Route::middleware('brand')->group(function () {
     Route::get('/registrations/{reference}',[CourseRegistrationController::class,'show'])->name('registrations.show');
     Route::get('/course-notice/{slug}',CourseNoticeController::class)->name('course-notice.show');
     Route::get('/course-notice/{slug}/qr.svg',CourseNoticeQrController::class)->name('course-notice.qr');
+    Route::get('/order-recipient/{reference}/{token}',[OrderRecipientController::class,'edit'])->name('order-recipient.edit');
+    Route::put('/order-recipient/{reference}/{token}',[OrderRecipientController::class,'update'])->name('order-recipient.update');
     Route::get('/shop',[SiteController::class,'shop'])->name('shop.index');
     Route::get('/shop/plants/{slug}',[SiteController::class,'plant'])->name('shop.plants.show');
     Route::get('/shop/plants/{slug}/specimens/{specimen}',[SiteController::class,'specimen'])->name('shop.specimens.show');
