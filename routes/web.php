@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,CourseController,CourseSessionController,DashboardController,HomepageController,MediaLibraryController,PreviewController,ProfileController,UserController};
-use App\Http\Controllers\{AuthController,SiteController};
+use App\Http\Controllers\Admin\CourseRegistrationController as AdminCourseRegistrationController;
+use App\Http\Controllers\{AuthController,CourseNoticeController,CourseNoticeQrController,CourseRegistrationController,SiteController};
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('brand')->group(function () {
@@ -46,6 +47,9 @@ Route::middleware('brand')->group(function () {
         Route::post('/courses/{course}/sessions',[CourseSessionController::class,'store'])->name('course-sessions.store');
         Route::get('/courses/{course}/sessions/{session}/edit',[CourseSessionController::class,'edit'])->name('course-sessions.edit');
         Route::put('/courses/{course}/sessions/{session}',[CourseSessionController::class,'update'])->name('course-sessions.update');
+        Route::get('/registrations',[AdminCourseRegistrationController::class,'index'])->name('registrations.index');
+        Route::get('/registrations/{registration}/edit',[AdminCourseRegistrationController::class,'edit'])->name('registrations.edit');
+        Route::put('/registrations/{registration}',[AdminCourseRegistrationController::class,'update'])->name('registrations.update');
         Route::resource('brands',BrandController::class)->except('show');
         Route::resource('users',UserController::class)->only(['index','create','store','edit','update']);
         Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services');
@@ -65,6 +69,11 @@ Route::middleware('brand')->group(function () {
     Route::get('/services/{slug}',[SiteController::class,'service'])->name('services.show');
     Route::get('/courses',[SiteController::class,'courses'])->name('courses.index');
     Route::get('/courses/{slug}',[SiteController::class,'course'])->name('courses.show');
+    Route::get('/courses/{slug}/sessions/{session}/register',[CourseRegistrationController::class,'create'])->name('registrations.create');
+    Route::post('/courses/{slug}/sessions/{session}/register',[CourseRegistrationController::class,'store'])->name('registrations.store');
+    Route::get('/registrations/{reference}',[CourseRegistrationController::class,'show'])->name('registrations.show');
+    Route::get('/course-notice/{slug}',CourseNoticeController::class)->name('course-notice.show');
+    Route::get('/course-notice/{slug}/qr.svg',CourseNoticeQrController::class)->name('course-notice.qr');
     Route::get('/shop',[SiteController::class,'shop'])->name('shop.index');
     Route::fallback(fn()=>abort(404));
 });

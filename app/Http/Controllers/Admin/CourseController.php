@@ -110,7 +110,13 @@ class CourseController extends Controller
             'description' => 'nullable|string|max:50000',
             'suitable_for' => 'nullable|string|max:10000',
             'precautions' => 'nullable|string|max:10000',
-            'notion_url' => ['nullable', 'url:http,https', 'max:2000'],
+            'notion_url' => ['nullable', 'url:http,https', 'max:2000', function (string $attribute, mixed $value, \Closure $fail) {
+                if (! filled($value)) return;
+                $host = strtolower((string) parse_url($value, PHP_URL_HOST));
+                if (! in_array($host, ['notion.so', 'www.notion.so'], true) && ! str_ends_with($host, '.notion.site')) {
+                    $fail('行前通知網址必須使用 Notion 網域。');
+                }
+            }],
             'duration_minutes' => 'nullable|integer|min:1|max:10080',
             'sort_order' => 'nullable|integer|min:0|max:9999',
             'seo_title' => 'nullable|string|max:255',
