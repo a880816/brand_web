@@ -1,0 +1,5 @@
+@extends('layouts.admin')
+@section('title','植株品種')
+@section('content')
+<div class="admin-heading"><div><p class="admin-kicker">PLANTS</p><h1>植株品種</h1></div><a class="admin-button" href="{{ route('admin.plant-varieties.create') }}">新增品種</a></div><section class="admin-panel table-wrap"><table class="admin-table"><thead><tr><th>品種</th><th>品種編號</th><th>在庫</th><th>狀態</th><th>操作</th></tr></thead><tbody>@forelse($varieties as $variety)<tr><td data-label="品種"><strong>{{ $variety->name }}</strong><small>{{ $variety->scientific_name }}</small></td><td data-label="品種編號">{{ $variety->variety_code }}</td><td data-label="在庫">{{ $variety->availableStock() }}</td><td data-label="狀態"><span class="status {{ $variety->status }}">{{ $variety->status==='published'?'販售中':'下架' }}</span></td><td data-label="操作" class="table-actions"><a href="{{ route('admin.plant-varieties.edit',$variety) }}">編輯</a><a href="{{ route('admin.plant-specimens.create',$variety) }}">新增實株</a></td></tr>@empty<tr><td colspan="5" class="admin-empty">尚無植株品種。</td></tr>@endforelse</tbody></table>{{ $varieties->links() }}</section>
+@endsection

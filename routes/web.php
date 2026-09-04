@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,CourseController,CourseSessionController,DashboardController,HomepageController,MediaLibraryController,PreviewController,ProfileController,UserController};
+use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,CourseController,CourseSessionController,DashboardController,HomepageController,MaterialController,MediaLibraryController,PlantSpecimenController,PlantVarietyController,PreviewController,ProfileController,UserController};
 use App\Http\Controllers\Admin\CourseRegistrationController as AdminCourseRegistrationController;
 use App\Http\Controllers\{AuthController,CourseNoticeController,CourseNoticeQrController,CourseRegistrationController,SiteController};
 use Illuminate\Support\Facades\Route;
@@ -50,6 +50,12 @@ Route::middleware('brand')->group(function () {
         Route::get('/registrations',[AdminCourseRegistrationController::class,'index'])->name('registrations.index');
         Route::get('/registrations/{registration}/edit',[AdminCourseRegistrationController::class,'edit'])->name('registrations.edit');
         Route::put('/registrations/{registration}',[AdminCourseRegistrationController::class,'update'])->name('registrations.update');
+        Route::resource('plant-varieties',PlantVarietyController::class)->parameters(['plant-varieties'=>'plantVariety'])->except('show');
+        Route::get('/plant-varieties/{plantVariety}/specimens/create',[PlantSpecimenController::class,'create'])->name('plant-specimens.create');
+        Route::post('/plant-varieties/{plantVariety}/specimens',[PlantSpecimenController::class,'store'])->name('plant-specimens.store');
+        Route::get('/plant-varieties/{plantVariety}/specimens/{plantSpecimen}/edit',[PlantSpecimenController::class,'edit'])->name('plant-specimens.edit');
+        Route::put('/plant-varieties/{plantVariety}/specimens/{plantSpecimen}',[PlantSpecimenController::class,'update'])->name('plant-specimens.update');
+        Route::resource('materials',MaterialController::class)->except(['show','destroy']);
         Route::resource('brands',BrandController::class)->except('show');
         Route::resource('users',UserController::class)->only(['index','create','store','edit','update']);
         Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services');
@@ -75,5 +81,8 @@ Route::middleware('brand')->group(function () {
     Route::get('/course-notice/{slug}',CourseNoticeController::class)->name('course-notice.show');
     Route::get('/course-notice/{slug}/qr.svg',CourseNoticeQrController::class)->name('course-notice.qr');
     Route::get('/shop',[SiteController::class,'shop'])->name('shop.index');
+    Route::get('/shop/plants/{slug}',[SiteController::class,'plant'])->name('shop.plants.show');
+    Route::get('/shop/plants/{slug}/specimens/{specimen}',[SiteController::class,'specimen'])->name('shop.specimens.show');
+    Route::get('/shop/materials/{slug}',[SiteController::class,'material'])->name('shop.materials.show');
     Route::fallback(fn()=>abort(404));
 });
