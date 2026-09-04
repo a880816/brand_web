@@ -1,8 +1,8 @@
 <?php
 namespace App\Services;
-use App\Models\{Brand,Media}; use App\Support\BrandContext; use Illuminate\Database\Eloquent\Model; use Illuminate\Http\UploadedFile; use Illuminate\Support\Facades\{DB,Storage,Validator}; use Illuminate\Support\Str; use Illuminate\Validation\ValidationException;
+use App\Models\{Brand,Course,HomepageContent,Material,Media,PlantSpecimen,PlantVariety}; use App\Support\BrandContext; use Illuminate\Database\Eloquent\Model; use Illuminate\Http\UploadedFile; use Illuminate\Support\Facades\{DB,Storage,Validator}; use Illuminate\Support\Str; use Illuminate\Validation\ValidationException;
 class MediaService {
- private const COLLECTIONS=['App\\Models\\Brand'=>['logo','favicon','hero_desktop','hero_mobile','gallery','og'],'App\\Models\\Page'=>['hero_desktop','hero_mobile','gallery','og'],'App\\Models\\PageSection'=>['image','gallery'],'App\\Models\\Service'=>['cover','gallery','og'],'App\\Models\\Course'=>['cover','gallery','og']];
+ private const COLLECTIONS=[Brand::class=>['logo','favicon','og'],HomepageContent::class=>['hero_desktop','hero_mobile','intro','gallery'],Course::class=>['cover','gallery','og'],PlantVariety::class=>['mother','gallery','og'],PlantSpecimen::class=>['specimen','gallery'],Material::class=>['cover','gallery','og'],'App\\Models\\Page'=>['hero_desktop','hero_mobile','gallery','og'],'App\\Models\\PageSection'=>['image','gallery'],'App\\Models\\Service'=>['cover','gallery','og']];
  private const VARIANTS=['thumbnail'=>480,'card'=>960,'detail'=>1600];
  public function __construct(private BrandContext $context){}
  public function collectionsFor(Model $owner):array{return self::COLLECTIONS[$owner::class]??[];}

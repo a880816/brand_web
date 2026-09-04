@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\PageSectionEditor;
-use App\Models\{AuditLog, Brand, Media, Page, PageSection, User};
+use App\Models\{AuditLog, Brand, HomepageContent, Media, Page, PageSection, User};
 use App\Services\{AuditService, MediaService};
 use App\Support\BrandContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,15 +25,17 @@ class PageSectionAndMediaTest extends TestCase
         return [$brand,$page];
     }
 
-    public function test_each_brand_renders_only_its_own_active_sections_and_swiper(): void
+    public function test_each_brand_renders_only_its_own_homepage_gallery_and_swiper(): void
     {
-        [$a,$pageA] = $this->setupBrand();
-        [$b,$pageB] = $this->setupBrand('terracotta','brand-b.localhost');
-        $gallery = PageSection::factory()->create(['brand_id'=>$a->id,'page_id'=>$pageA->id,'type'=>'gallery','heading'=>'A 品牌輪播']);
-        Media::factory()->create(['brand_id'=>$a->id,'mediable_type'=>$gallery->getMorphClass(),'mediable_id'=>$gallery->id]);
-        PageSection::factory()->create(['brand_id'=>$b->id,'page_id'=>$pageB->id,'heading'=>'B 品牌限定']);
-        PageSection::factory()->create(['brand_id'=>$a->id,'page_id'=>$pageA->id,'heading'=>'隱藏內容','status'=>'inactive']);
-        $this->get('http://brand-a.localhost/')->assertOk()->assertSee('A 品牌輪播')->assertSee('js-swiper')->assertDontSee('B 品牌限定')->assertDontSee('隱藏內容');
+        [$a] = $this->setupBrand();
+        [$b] = $this->setupBrand('terracotta','brand-b.localhost');
+        $homeA=HomepageContent::create(['brand_id'=>$a->id,'draft_data'=>[],'published_data'=>[]]);
+        $homeB=HomepageContent::create(['brand_id'=>$b->id,'draft_data'=>[],'published_data'=>[]]);
+        $mediaA=Media::factory()->create(['brand_id'=>$a->id,'mediable_type'=>$homeA->getMorphClass(),'mediable_id'=>$homeA->id,'collection'=>'gallery']);
+        $mediaB=Media::factory()->create(['brand_id'=>$b->id,'mediable_type'=>$homeB->getMorphClass(),'mediable_id'=>$homeB->id,'collection'=>'gallery']);
+        $homeA->update(['published_data'=>['gallery_items'=>[['media_id'=>$mediaA->id,'title'=>'A 品牌輪播']]]]);
+        $homeB->update(['published_data'=>['gallery_items'=>[['media_id'=>$mediaB->id,'title'=>'B 品牌限定']]]]);
+        $this->get('http://brand-a.localhost/')->assertOk()->assertSee('A 品牌輪播')->assertSee('js-swiper')->assertDontSee('B 品牌限定');
     }
 
     public function test_livewire_updates_reapply_brand_and_account_middleware(): void

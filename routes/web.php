@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,DashboardController,MediaLibraryController,PreviewController,ProfileController,UserController};
+use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,DashboardController,HomepageController,MediaLibraryController,PreviewController,ProfileController,UserController};
 use App\Http\Controllers\{AuthController,SiteController};
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +30,10 @@ Route::middleware('brand')->group(function () {
         Route::get('/media',[MediaLibraryController::class,'index'])->name('media.index');
         Route::put('/media/{id}',[MediaLibraryController::class,'update'])->name('media.update');
         Route::delete('/media/{id}',[MediaLibraryController::class,'destroy'])->name('media.destroy');
+        Route::get('/homepage',[HomepageController::class,'edit'])->name('homepage.edit');
+        Route::put('/homepage',[HomepageController::class,'update'])->name('homepage.update');
+        Route::post('/homepage/publish',[HomepageController::class,'publish'])->name('homepage.publish');
+        Route::get('/homepage/preview',[HomepageController::class,'preview'])->name('homepage.preview');
         Route::resource('brands',BrandController::class)->except('show');
         Route::resource('users',UserController::class)->only(['index','create','store','edit','update']);
         Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services|courses');
@@ -49,5 +53,6 @@ Route::middleware('brand')->group(function () {
     Route::get('/services/{slug}',[SiteController::class,'service'])->name('services.show');
     Route::get('/courses',[SiteController::class,'courses'])->name('courses.index');
     Route::get('/courses/{slug}',[SiteController::class,'course'])->name('courses.show');
+    Route::get('/shop',[SiteController::class,'shop'])->name('shop.index');
     Route::fallback(fn()=>abort(404));
 });

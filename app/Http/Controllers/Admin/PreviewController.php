@@ -19,7 +19,7 @@ class PreviewController extends Controller
 
         if ($item instanceof Page) {
             if ($item->type === 'about') return view('site.about', ['page'=>$item]);
-            return view('site.home', ['page'=>$item,'services'=>$context->brand()->services()->published()->limit(3)->get(),'courses'=>$context->brand()->courses()->published()->limit(3)->get(),'links'=>$context->brand()->links()->get()]);
+            return view('site.legacy-page-preview', ['page'=>$item]);
         }
         return view('site.detail', ['kind'=>$item instanceof Course?'課程':'服務','item'=>$item,'back'=>$item instanceof Course?'courses.index':'services.index','links'=>$context->brand()->links()->get()]);
     }
