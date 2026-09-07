@@ -8,7 +8,7 @@
         </div>
         <a href="{{ route('admin.courses.edit', $course) }}">返回課程</a>
     </div>
-    @php($sessionPlans = array_values(old('plans', $session->plans->map(fn($p) => ['name' => $p->name, 'participants' => $p->participants, 'price' => $p->price, 'is_enabled' => $p->is_enabled ? 1 : 0])->all())))
+    @php($sessionPlans = array_values(old('plans', $session->plans->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'participants' => $p->participants, 'price' => $p->price, 'is_enabled' => $p->is_enabled ? 1 : 0])->all())))
     <form method="post"
         action="{{ $session->exists ? route('admin.course-sessions.update', [$course, $session]) : route('admin.course-sessions.store', $course) }}"
         class="admin-panel admin-form" x-data="{ override: {{ old('override_plans', $session->exists && $session->plans->isNotEmpty() ? 1 : 0) ? 'true' : 'false' }}, plans: {{ Js::from($sessionPlans) }} }">
@@ -57,6 +57,7 @@
             <legend>場次方案</legend>
             <template x-for="(plan,index) in plans" :key="index">
                 <div class="repeat-row">
+                    <input type="hidden" :name="`plans[${index}][id]`" :value="plan.id || ''">
                     <label>名稱<input :name="`plans[${index}][name]`" x-model="plan.name">
                     </label>
                     <label>包含人數<input type="number" min="1" :name="`plans[${index}][participants]`"

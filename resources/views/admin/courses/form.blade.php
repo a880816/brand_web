@@ -50,12 +50,13 @@
         <label>行前通知 Notion URL<input type="url" name="notion_url" value="{{ old('notion_url', $course->notion_url) }}"
                 placeholder="https://....notion.site/...">
         </label>
-        @php($defaultPlans = $course->exists ? $course->plans->map(fn($p) => ['name' => $p->name, 'participants' => $p->participants, 'price' => $p->price, 'is_enabled' => $p->is_enabled ? 1 : 0])->all() : [['name' => '單人方案', 'participants' => 1, 'price' => '', 'is_enabled' => 1]])
+        @php($defaultPlans = $course->exists ? $course->plans->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'participants' => $p->participants, 'price' => $p->price, 'is_enabled' => $p->is_enabled ? 1 : 0])->all() : [['id' => null, 'name' => '單人方案', 'participants' => 1, 'price' => '', 'is_enabled' => 1]])
         <fieldset class="admin-subpanel" x-data="{ plans: {{ Js::from(array_values(old('plans', $defaultPlans))) }} }">
             <legend>預設方案</legend>
             <p>價格以方案計算，不以人頭計算；場次可另行覆寫。</p>
             <template x-for="(plan,index) in plans" :key="index">
                 <div class="repeat-row">
+                    <input type="hidden" :name="`plans[${index}][id]`" :value="plan.id || ''">
                     <label>名稱<input :name="`plans[${index}][name]`" x-model="plan.name" required>
                     </label>
                     <label>包含人數<input type="number" min="1" :name="`plans[${index}][participants]`"
@@ -72,7 +73,7 @@
                 </div>
             </template>
             <button type="button" class="admin-button secondary"
-                @click="plans.push({name:'',participants:1,price:'',is_enabled:1})">新增方案</button>
+                @click="plans.push({id:null,name:'',participants:1,price:'',is_enabled:1})">新增方案</button>
         </fieldset>
         <details>
             <summary>SEO 設定</summary>

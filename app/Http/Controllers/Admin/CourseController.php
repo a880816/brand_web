@@ -9,6 +9,7 @@ use App\Support\BrandContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CourseController extends Controller
 {
@@ -25,6 +26,7 @@ class CourseController extends Controller
     public function create()
     {
         $this->authorize('create', Course::class);
+
         return view('admin.courses.form', ['course' => new Course]);
     }
 
@@ -35,6 +37,7 @@ class CourseController extends Controller
         $course = DB::transaction(function () use ($data, $plans, $context) {
             $course = Course::create($data + ['brand_id' => $context->id()]);
             $this->syncPlans($course, $plans, $context->id());
+
             return $course;
         });
         $audit->record('courses.created', $course, [], $course->load('plans')->toArray());
@@ -45,6 +48,7 @@ class CourseController extends Controller
     public function edit(Course $course, BrandContext $context)
     {
         $course = $this->tenantCourse($course, $context);
+
         return view('admin.courses.form', compact('course'));
     }
 
@@ -71,6 +75,7 @@ class CourseController extends Controller
         $before = $course->toArray();
         $course->update(['status' => 'published', 'published_at' => $course->published_at ?? now()]);
         $audit->record('courses.published', $course, $before, $course->fresh()->toArray());
+
         return back()->with('status', '課程已發布。');
     }
 
@@ -81,6 +86,7 @@ class CourseController extends Controller
         $before = $course->toArray();
         $course->update(['status' => 'draft']);
         $audit->record('courses.unpublished', $course, $before, $course->fresh()->toArray());
+
         return back()->with('status', '課程已下架。');
     }
 
@@ -91,6 +97,7 @@ class CourseController extends Controller
         abort_if($course->registrations()->exists(), 422, '已有報名紀錄的課程不可刪除，請改為下架。');
         $audit->record('courses.deleted', $course, $course->toArray());
         $course->delete();
+
         return redirect()->route('admin.courses.index')->with('status', '課程已刪除。');
     }
 
@@ -98,6 +105,7 @@ class CourseController extends Controller
     {
         abort_unless($course->brand_id === $context->id(), 404);
         $this->authorize('view', $course);
+
         return $course;
     }
 
@@ -111,7 +119,9 @@ class CourseController extends Controller
             'suitable_for' => 'nullable|string|max:10000',
             'precautions' => 'nullable|string|max:10000',
             'notion_url' => ['nullable', 'url:https', 'max:2000', function (string $attribute, mixed $value, \Closure $fail) {
-                if (! filled($value)) return;
+                if (! filled($value)) {
+                    return;
+                }
                 $host = strtolower((string) parse_url($value, PHP_URL_HOST));
                 if (! in_array($host, ['notion.so', 'www.notion.so'], true) && ! str_ends_with($host, '.notion.site')) {
                     $fail('行前通知網址必須使用 Notion 網域。');
@@ -122,6 +132,13 @@ class CourseController extends Controller
             'seo_title' => 'nullable|string|max:255',
             'seo_description' => 'nullable|string|max:1000',
             'plans' => 'required|array|min:1|max:12',
+            'plans.*.id' => [
+                'nullable', 'integer', 'distinct',
+                Rule::exists('course_plans', 'id')->where(fn ($query) => $query
+                    ->where('brand_id', $context->id())
+                    ->where('course_id', $course?->id ?? 0)
+                    ->whereNull('course_session_id')),
+            ],
             'plans.*.name' => 'required|string|max:100',
             'plans.*.participants' => 'required|integer|min:1|max:100',
             'plans.*.price' => 'required|numeric|min:0|max:99999999',
@@ -137,16 +154,34 @@ class CourseController extends Controller
 
     private function syncPlans(Course $course, array $plans, int $brandId): void
     {
-        $course->plans()->delete();
+        $retainedIds = [];
+
         foreach (array_values($plans) as $index => $plan) {
-            $course->plans()->create([
+            $attributes = [
                 'brand_id' => $brandId,
                 'name' => $plan['name'],
                 'participants' => $plan['participants'],
                 'price' => $plan['price'],
                 'sort_order' => $index,
                 'is_enabled' => (bool) ($plan['is_enabled'] ?? false),
+            ];
+
+            if (filled($plan['id'] ?? null)) {
+                $existing = $course->plans()->findOrFail((int) $plan['id']);
+                $existing->update($attributes);
+                $retainedIds[] = $existing->id;
+            } else {
+                $retainedIds[] = $course->plans()->create($attributes)->id;
+            }
+        }
+
+        $removedPlans = $course->plans()->whereNotIn('id', $retainedIds)->get();
+        if ($removedPlans->contains(fn ($plan) => $plan->registrations()->exists())) {
+            throw ValidationException::withMessages([
+                'plans' => '已有報名紀錄的方案不可移除，請改為停用。',
             ]);
         }
+
+        $removedPlans->each->delete();
     }
 }

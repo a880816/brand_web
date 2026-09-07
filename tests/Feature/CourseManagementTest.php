@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Brand, Course, CourseSession, User};
+use App\Models\Brand;
+use App\Models\Course;
+use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CourseManagementTest extends TestCase
@@ -22,6 +25,7 @@ class CourseManagementTest extends TestCase
         $brand = Brand::factory()->create(['slug' => 'verdant', 'domain' => 'brand-a.localhost']);
         $admin = User::factory()->brandAdmin()->create();
         $admin->brands()->attach($brand);
+
         return [$brand, $admin];
     }
 
@@ -29,6 +33,7 @@ class CourseManagementTest extends TestCase
     {
         $course = Course::factory()->create(['brand_id' => $brand->id, 'status' => 'published', 'published_at' => now()]);
         $course->plans()->create(['brand_id' => $brand->id, 'name' => '雙人方案', 'participants' => 2, 'price' => 2000, 'is_enabled' => true]);
+
         return $course;
     }
 
@@ -58,6 +63,106 @@ class CourseManagementTest extends TestCase
             ->get('/admin/courses/'.$course->id.'/edit')->assertOk()->assertSee('預設方案');
     }
 
+    public function test_adding_course_plan_preserves_plan_referenced_by_registration(): void
+    {
+        [$brand, $admin] = $this->context();
+        $course = $this->course($brand);
+        $plan = $course->plans()->first();
+        $session = $course->sessions()->create($this->payload() + ['brand_id' => $brand->id]);
+        $registration = $session->registrations()->create([
+            'reference' => (string) Str::uuid(),
+            'brand_id' => $brand->id,
+            'course_id' => $course->id,
+            'course_plan_id' => $plan->id,
+            'contact_name' => '客人',
+            'phone' => '0912345678',
+            'email' => 'guest@example.test',
+            'social_platform' => 'line',
+            'social_account' => 'guest',
+            'participants' => $plan->participants,
+            'plan_name' => $plan->name,
+            'amount' => $plan->price,
+            'status' => 'awaiting_payment',
+            'payment_due_at' => now()->addDay(),
+            'bank_snapshot' => [],
+        ]);
+
+        $response = $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->put('/admin/courses/'.$course->id, [
+                'name' => $course->name,
+                'slug' => $course->slug,
+                'plans' => [
+                    ['id' => $plan->id, 'name' => '雙人方案', 'participants' => 2, 'price' => 2000, 'is_enabled' => 1],
+                    ['name' => '四人方案', 'participants' => 4, 'price' => 3600, 'is_enabled' => 1],
+                ],
+            ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('course_plans', ['id' => $plan->id, 'course_id' => $course->id]);
+        $this->assertDatabaseHas('course_plans', ['course_id' => $course->id, 'name' => '四人方案']);
+        $this->assertSame($plan->id, $registration->fresh()->course_plan_id);
+
+        $registration->delete();
+        $newPlan = $course->plans()->where('name', '四人方案')->firstOrFail();
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->put('/admin/courses/'.$course->id, [
+                'name' => $course->name,
+                'slug' => $course->slug,
+                'plans' => [
+                    ['id' => $newPlan->id, 'name' => $newPlan->name, 'participants' => 4, 'price' => 3600, 'is_enabled' => 1],
+                ],
+            ])->assertSessionHasErrors('plans');
+
+        $this->assertDatabaseHas('course_plans', ['id' => $plan->id]);
+        $this->assertDatabaseCount('course_plans', 2);
+    }
+
+    public function test_adding_session_plan_preserves_plan_referenced_by_registration(): void
+    {
+        [$brand, $admin] = $this->context();
+        $course = $this->course($brand);
+        $session = $course->sessions()->create($this->payload(['status' => 'draft']) + ['brand_id' => $brand->id]);
+        $plan = $session->plans()->create([
+            'brand_id' => $brand->id,
+            'course_id' => $course->id,
+            'name' => '場次雙人方案',
+            'participants' => 2,
+            'price' => 2200,
+            'is_enabled' => true,
+        ]);
+        $session->registrations()->create([
+            'reference' => (string) Str::uuid(),
+            'brand_id' => $brand->id,
+            'course_id' => $course->id,
+            'course_plan_id' => $plan->id,
+            'contact_name' => '客人',
+            'phone' => '0912345678',
+            'email' => 'guest@example.test',
+            'social_platform' => 'line',
+            'social_account' => 'guest',
+            'participants' => $plan->participants,
+            'plan_name' => $plan->name,
+            'amount' => $plan->price,
+            'status' => 'awaiting_payment',
+            'payment_due_at' => now()->addDay(),
+            'bank_snapshot' => [],
+        ]);
+
+        $response = $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->put('/admin/courses/'.$course->id.'/sessions/'.$session->id, $this->payload([
+                'status' => 'draft',
+                'override_plans' => 1,
+                'plans' => [
+                    ['id' => $plan->id, 'name' => '場次雙人方案', 'participants' => 2, 'price' => 2200, 'is_enabled' => 1],
+                    ['name' => '場次四人方案', 'participants' => 4, 'price' => 4000, 'is_enabled' => 1],
+                ],
+            ]));
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('course_plans', ['id' => $plan->id, 'course_session_id' => $session->id]);
+        $this->assertDatabaseHas('course_plans', ['course_session_id' => $session->id, 'name' => '場次四人方案']);
+    }
+
     public function test_open_session_capacity_is_locked_and_cross_brand_session_is_hidden(): void
     {
         [$brand, $admin] = $this->context();
@@ -79,10 +184,13 @@ class CourseManagementTest extends TestCase
     public function test_frontend_sorts_available_courses_first_and_hides_old_courses(): void
     {
         [$brand] = $this->context();
-        $closed = $this->course($brand); $closed->update(['name' => '無場次課程', 'slug' => 'closed', 'sort_order' => 0]);
-        $open = $this->course($brand); $open->update(['name' => '可報名課程', 'slug' => 'open', 'sort_order' => 10]);
+        $closed = $this->course($brand);
+        $closed->update(['name' => '無場次課程', 'slug' => 'closed', 'sort_order' => 0]);
+        $open = $this->course($brand);
+        $open->update(['name' => '可報名課程', 'slug' => 'open', 'sort_order' => 10]);
         $open->sessions()->create($this->payload() + ['brand_id' => $brand->id]);
-        $old = $this->course($brand); $old->update(['name' => '過期課程', 'slug' => 'old']);
+        $old = $this->course($brand);
+        $old->update(['name' => '過期課程', 'slug' => 'old']);
         $old->sessions()->create($this->payload(['starts_at' => now()->subMonths(3), 'ends_at' => now()->subMonths(3)->addHour(), 'status' => 'closed']) + ['brand_id' => $brand->id]);
 
         $response = $this->get('http://brand-a.localhost/courses')->assertOk()->assertDontSee('過期課程');
@@ -92,25 +200,31 @@ class CourseManagementTest extends TestCase
 
     public function test_external_course_links_use_host_allowlists(): void
     {
-        [$brand, $admin] = $this->context();$course=$this->course($brand);
-        $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])
-            ->post("/admin/courses/{$course->id}/sessions",$this->payload(['google_maps_url'=>'https://evil.example/map']))
+        [$brand, $admin] = $this->context();
+        $course = $this->course($brand);
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->post("/admin/courses/{$course->id}/sessions", $this->payload(['google_maps_url' => 'https://evil.example/map']))
             ->assertSessionHasErrors('google_maps_url');
-        $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])
-            ->put("/admin/courses/{$course->id}",[
-                'name'=>$course->name,'slug'=>$course->slug,'notion_url'=>'https://evil.example/notice',
-                'plans'=>[['name'=>'雙人方案','participants'=>2,'price'=>2000,'is_enabled'=>1]],
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->put("/admin/courses/{$course->id}", [
+                'name' => $course->name, 'slug' => $course->slug, 'notion_url' => 'https://evil.example/notice',
+                'plans' => [['name' => '雙人方案', 'participants' => 2, 'price' => 2000, 'is_enabled' => 1]],
             ])->assertSessionHasErrors('notion_url');
     }
 
     public function test_empty_session_can_be_deleted_but_registered_session_is_retained(): void
     {
-        [$brand,$admin]=$this->context();$course=$this->course($brand);$empty=$course->sessions()->create($this->payload(['status'=>'draft'])+['brand_id'=>$brand->id]);
-        $client=$this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost']);
-        $client->delete("/admin/courses/{$course->id}/sessions/{$empty->id}")->assertRedirect();$this->assertSoftDeleted('course_sessions',['id'=>$empty->id]);
+        [$brand,$admin] = $this->context();
+        $course = $this->course($brand);
+        $empty = $course->sessions()->create($this->payload(['status' => 'draft']) + ['brand_id' => $brand->id]);
+        $client = $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost']);
+        $client->delete("/admin/courses/{$course->id}/sessions/{$empty->id}")->assertRedirect();
+        $this->assertSoftDeleted('course_sessions', ['id' => $empty->id]);
 
-        $registered=$course->sessions()->create($this->payload()+['brand_id'=>$brand->id]);$plan=$course->plans()->first();
-        $registered->registrations()->create(['reference'=>(string)\Illuminate\Support\Str::uuid(),'brand_id'=>$brand->id,'course_id'=>$course->id,'course_plan_id'=>$plan->id,'contact_name'=>'客人','phone'=>'0912345678','email'=>'guest@example.test','social_platform'=>'line','social_account'=>'guest','participants'=>$plan->participants,'plan_name'=>$plan->name,'amount'=>$plan->price,'status'=>'awaiting_payment','payment_due_at'=>now()->addDay(),'bank_snapshot'=>[]]);
-        $client->delete("/admin/courses/{$course->id}/sessions/{$registered->id}")->assertStatus(422);$this->assertDatabaseHas('course_sessions',['id'=>$registered->id,'deleted_at'=>null]);
+        $registered = $course->sessions()->create($this->payload() + ['brand_id' => $brand->id]);
+        $plan = $course->plans()->first();
+        $registered->registrations()->create(['reference' => (string) Str::uuid(), 'brand_id' => $brand->id, 'course_id' => $course->id, 'course_plan_id' => $plan->id, 'contact_name' => '客人', 'phone' => '0912345678', 'email' => 'guest@example.test', 'social_platform' => 'line', 'social_account' => 'guest', 'participants' => $plan->participants, 'plan_name' => $plan->name, 'amount' => $plan->price, 'status' => 'awaiting_payment', 'payment_due_at' => now()->addDay(), 'bank_snapshot' => []]);
+        $client->delete("/admin/courses/{$course->id}/sessions/{$registered->id}")->assertStatus(422);
+        $this->assertDatabaseHas('course_sessions', ['id' => $registered->id, 'deleted_at' => null]);
     }
 }
