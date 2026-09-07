@@ -36,6 +36,7 @@ class SaleOrderTest extends TestCase
         [$brand,$admin,$exact,,$material]=$this->fixture();
         $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])->post('/admin/orders',['lines'=>[['url'=>$this->specimenUrl($exact),'quantity'=>1],['url'=>'http://brand-a.localhost:8085/shop/materials/moss','quantity'=>2]]])->assertRedirect()->assertSessionHas('recipient_url');
         $order=SaleOrder::first();$this->assertSame('awaiting_recipient',$order->status);$this->assertSame('2400.00',$order->subtotal);$this->assertSame(1,$exact->fresh()->reserved_quantity);$this->assertSame(2,$material->fresh()->reserved_quantity);
+        $this->assertDatabaseHas('audit_logs',['auditable_id'=>$order->id,'action'=>'inventory.reserved']);
         $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])->get('/admin/orders/'.$order->id.'/edit')->assertOk()->assertSee('水苔');
         $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])->post('/admin/orders/'.$order->id.'/paid')->assertStatus(422);
         try{app(SaleOrderService::class)->create($brand,$admin,[['url'=>$this->specimenUrl($exact),'quantity'=>1]]);$this->fail('Expected duplicate reservation to fail');}catch(ValidationException $exception){$this->assertArrayHasKey('lines.0.quantity',$exception->errors());}
@@ -58,6 +59,13 @@ class SaleOrderTest extends TestCase
         $service->saveRecipient($order,$this->recipientData(['shipping_method'=>'self_pickup']),false);$service->markPaid($order);
         $this->assertSame(1,$bulk->fresh()->stock_on_hand);$this->assertSame(4,$material->fresh()->stock_on_hand);$this->assertDatabaseHas('plant_sold_units',['sold_code'=>'2-1']);$this->assertDatabaseHas('plant_sold_units',['sold_code'=>'2-2']);
         $service->void($order->fresh());$this->assertSame(3,$bulk->fresh()->stock_on_hand);$this->assertSame(5,$material->fresh()->stock_on_hand);$this->assertDatabaseCount('plant_sold_units',0);
+    }
+
+    public function test_admin_payment_and_void_audit_inventory_transitions():void
+    {
+        [$brand,$admin,$exact]=$this->fixture();$service=app(SaleOrderService::class);[$order]=$service->create($brand,$admin,[['url'=>$this->specimenUrl($exact),'quantity'=>1]]);$service->saveRecipient($order,$this->recipientData(),false);
+        $client=$this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost']);$client->post('/admin/orders/'.$order->id.'/paid')->assertRedirect();$this->assertDatabaseHas('audit_logs',['auditable_id'=>$order->id,'action'=>'inventory.sold']);
+        $client->post('/admin/orders/'.$order->id.'/void')->assertRedirect();$this->assertDatabaseHas('audit_logs',['auditable_id'=>$order->id,'action'=>'inventory.restored']);
     }
 
     public function test_cross_brand_product_url_is_rejected():void
