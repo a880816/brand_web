@@ -101,6 +101,22 @@ class CourseRegistrationTest extends TestCase
         $this->assertNotNull($one->fresh());
     }
 
+    public function test_admin_registration_index_renders_records_and_overdue_status(): void
+    {
+        [$brand, , $session, $plan] = $this->fixture();
+        $registration = app(CourseRegistrationService::class)->register($brand, $session, $plan->id, $this->payload($plan->id));
+        $registration->update(['payment_due_at' => now()->subMinute(), 'remittance_last_five' => '12345']);
+        $admin = User::factory()->brandAdmin()->create();
+        $admin->brands()->attach($brand);
+
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->get('/admin/registrations')
+            ->assertOk()
+            ->assertSee('王小明')
+            ->assertSee('已逾期')
+            ->assertSee('•••••', false);
+    }
+
     public function test_registration_honeypot_is_rejected(): void
     {
         [, $course, $session, $plan] = $this->fixture();
