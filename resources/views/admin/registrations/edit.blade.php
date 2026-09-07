@@ -1,8 +1,54 @@
 @extends('layouts.admin')
-@section('title','處理課程報名')
+@section('title', '處理課程報名')
 @section('content')
-<div class="admin-heading"><div><p class="admin-kicker">REGISTRATION</p><h1>處理課程報名</h1></div><a href="{{ route('admin.registrations.index') }}">返回列表</a></div>
-@if(session('duplicate_last_five'))<div class="warning" role="alert"><strong>注意：此品牌有其他報名使用相同的匯款末五碼，請人工核對。</strong></div>@endif
-<section class="admin-panel"><h2>{{ $registration->course->name }}</h2><dl class="summary-list"><dt>場次</dt><dd>{{ $registration->session->starts_at->format('Y/m/d H:i') }}</dd><dt>聯絡人</dt><dd>{{ $registration->contact_name }}・{{ $registration->phone }}・{{ $registration->email }}</dd><dt>社群</dt><dd>{{ $registration->social_platform }}：{{ $registration->social_account }}</dd><dt>方案</dt><dd>{{ $registration->plan_name }}・{{ $registration->participants }} 人・NT$ {{ number_format((float)$registration->amount) }}</dd><dt>匯款期限</dt><dd>{{ $registration->payment_due_at->format('Y/m/d H:i') }}</dd></dl></section>
-<form method="post" action="{{ route('admin.registrations.update',$registration) }}" class="admin-panel admin-form">@csrf @method('PUT')<div class="form-grid"><label>狀態<select name="status"><option value="awaiting_payment" @selected(old('status',$registration->status)==='awaiting_payment')>等待匯款</option><option value="awaiting_review" @selected(old('status',$registration->status)==='awaiting_review')>等待核對</option><option value="confirmed" @selected(old('status',$registration->status)==='confirmed')>已確認</option><option value="cancelled" @selected(old('status',$registration->status)==='cancelled')>取消報名</option></select></label><label>匯款末五碼<input name="remittance_last_five" value="{{ old('remittance_last_five',$registration->remittance_last_five) }}" inputmode="numeric" maxlength="5" pattern="[0-9]{5}"></label></div><label>管理備註<textarea name="admin_note" rows="4">{{ old('admin_note',$registration->admin_note) }}</textarea></label><p>取消會釋出名額並保留完整紀錄，請由粉專人工聯絡客人。</p><button class="admin-button">儲存</button></form>
+    <div class="admin-heading">
+        <div>
+            <p class="admin-kicker">REGISTRATION</p>
+            <h1>處理課程報名</h1>
+        </div>
+        <a href="{{ route('admin.registrations.index') }}">返回列表</a>
+    </div>
+    @if (session('duplicate_last_five'))
+        <div class="warning" role="alert">
+            <strong>注意：此品牌有其他報名使用相同的匯款末五碼，請人工核對。</strong>
+        </div>
+    @endif
+    <section class="admin-panel">
+        <h2>{{ $registration->course->name }}</h2>
+        <dl class="summary-list">
+            <dt>場次</dt>
+            <dd>{{ $registration->session->starts_at->format('Y/m/d H:i') }}</dd>
+            <dt>聯絡人</dt>
+            <dd>{{ $registration->contact_name }}・{{ $registration->phone }}・{{ $registration->email }}</dd>
+            <dt>社群</dt>
+            <dd>{{ $registration->social_platform }}：{{ $registration->social_account }}</dd>
+            <dt>方案</dt>
+            <dd>{{ $registration->plan_name }}・{{ $registration->participants }} 人・NT$
+                {{ number_format((float) $registration->amount) }}</dd>
+            <dt>匯款期限</dt>
+            <dd>{{ $registration->payment_due_at->format('Y/m/d H:i') }}</dd>
+        </dl>
+    </section>
+    <form method="post" action="{{ route('admin.registrations.update', $registration) }}" class="admin-panel admin-form">
+        @csrf
+        @method('PUT')
+        <div class="form-grid">
+            <label>狀態<select name="status">
+                    <option value="awaiting_payment" @selected(old('status', $registration->status) === 'awaiting_payment')>等待匯款</option>
+                    <option value="awaiting_review" @selected(old('status', $registration->status) === 'awaiting_review')>等待核對</option>
+                    <option value="confirmed" @selected(old('status', $registration->status) === 'confirmed')>已確認</option>
+                    <option value="cancelled" @selected(old('status', $registration->status) === 'cancelled')>取消報名</option>
+                </select>
+            </label>
+            <label>匯款末五碼<input name="remittance_last_five"
+                    value="{{ old('remittance_last_five', $registration->remittance_last_five) }}" inputmode="numeric"
+                    maxlength="5" pattern="[0-9]{5}">
+            </label>
+        </div>
+        <label>管理備註
+            <textarea name="admin_note" rows="4">{{ old('admin_note', $registration->admin_note) }}</textarea>
+        </label>
+        <p>取消會釋出名額並保留完整紀錄，請由粉專人工聯絡客人。</p>
+        <button class="admin-button">儲存</button>
+    </form>
 @endsection

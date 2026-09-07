@@ -1,1 +1,14 @@
-@extends('layouts.auth') @section('title','忘記密碼') @section('content')<p class="admin-kicker">PASSWORD RESET</p><h1>重設密碼</h1><p>輸入 Email，我們會寄送重設連結。</p><form method="post" action="{{ route('password.email') }}" class="admin-form">@csrf<label>Email<input type="email" name="email" value="{{ old('email') }}" required autofocus></label>@error('email')<p class="field-error">{{ $message }}</p>@enderror<button class="admin-button" type="submit">寄送重設連結</button></form><a class="auth-link" href="{{ route('login') }}">返回登入</a>@endsection
+@extends('layouts.auth') @section('title', '忘記密碼') @section('content')<p class="admin-kicker">
+    PASSWORD RESET</p>
+<h1>重設密碼</h1>
+<p>輸入 Email，我們會寄送重設連結。</p>
+<form method="post" action="{{ route('password.email') }}" class="admin-form">
+    @csrf
+    <label>Email<input type="email" name="email" value="{{ old('email') }}" required autofocus>
+    </label>
+    @error('email')
+        <p class="field-error">{{ $message }}</p>
+    @enderror
+    <button class="admin-button" type="submit">寄送重設連結</button>
+</form>
+<a class="auth-link" href="{{ route('login') }}">返回登入</a>@endsection

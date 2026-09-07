@@ -1,9 +1,162 @@
-@props(['variant'=>'default','data'=>[],'media'=>collect(),'courses'=>collect(),'products'=>collect(),'gallery'=>collect()])
+@props([
+    'variant' => 'default',
+    'data' => [],
+    'media' => collect(),
+    'courses' => collect(),
+    'products' => collect(),
+    'gallery' => collect(),
+])
 <div class="brand-home brand-home-{{ $variant }}">
- <section class="hero"><picture>@if($mobile=$media->get((int)data_get($data,'hero_mobile_media_id')))<source media="(max-width: 640px)" srcset="{{ $mobile->url('detail') }}">@endif @if($desktop=$media->get((int)data_get($data,'hero_desktop_media_id')))<img src="{{ $desktop->url('detail') }}" alt="{{ $desktop->alt_text ?: data_get($data,'hero_title','品牌主視覺') }}" width="{{ $desktop->width }}" height="{{ $desktop->height }}" fetchpriority="high">@endif</picture><div class="hero-overlay"><h1>{{ data_get($data,'hero_title',$brand->name) }}</h1><p>{{ data_get($data,'hero_subtitle') }}</p><a class="button light" href="{{ route('courses.index') }}">{{ data_get($data,'hero_primary_label','探索課程') }}</a><a class="button ghost-light" href="{{ route('shop.index') }}">{{ data_get($data,'hero_secondary_label','逛逛商店') }}</a></div></section>
- <section class="section home-intro">@if($intro=$media->get((int)data_get($data,'intro_media_id')))<x-media-image :media="$intro" ratio="4/3" />@endif<div><p class="eyebrow">ABOUT</p><h2>{{ data_get($data,'intro_title') }}</h2><p>{!! nl2br(e(data_get($data,'intro_body'))) !!}</p>@if(data_get($data,'intro_link_url'))<a class="text-link" href="{{ data_get($data,'intro_link_url') }}" target="_blank" rel="noopener noreferrer">{{ data_get($data,'intro_link_label','了解更多') }} →</a>@endif</div></section>
- <section class="section"><div class="section-head"><div><p class="eyebrow">WORKSHOPS</p><h2>精選手作課程</h2></div><a href="{{ route('courses.index') }}">查看全部</a></div><div class="cards">@forelse($courses as $course)@php($open=$course->sessions->contains(fn($session)=>$session->availabilityStatus()==='open'))<article class="card"><x-media-image :media="$course->primaryMedia('cover')"/><div><p class="meta">{{ $open?'開放報名':'目前無可報名時段' }}</p><h3><a href="{{ route('courses.show',$course->slug) }}">{{ $course->name }}</a></h3><p>{{ $course->summary }}</p></div></article>@empty<p class="empty">精選課程準備中。</p>@endforelse</div></section>
- @if($products->isNotEmpty())<section class="section" x-data="{tab:'all'}"><div class="section-head"><div><p class="eyebrow">FEATURED SHOP</p><h2>精選商品</h2></div><a href="{{ route('shop.index') }}">查看全部</a></div><div class="shop-tabs"><button @click="tab='all'" :class="tab==='all'?'active':''">全部</button><button @click="tab='plants'" :class="tab==='plants'?'active':''">植株</button><button @click="tab='materials'" :class="tab==='materials'?'active':''">資材</button></div><div class="product-grid">@foreach($products as $product)@if($product instanceof \App\Models\PlantVariety)<article class="product-card" x-show="tab==='all'||tab==='plants'"><a href="{{ route('shop.plants.show',$product->slug) }}"><x-media-image :media="$product->primaryMedia('mother')"/></a><div><p class="meta">植株・在庫 {{ $product->availableStock() }}</p><h3>{{ $product->name }}</h3></div></article>@else<article class="product-card" x-show="tab==='all'||tab==='materials'"><a href="{{ route('shop.materials.show',$product->slug) }}"><x-media-image :media="$product->primaryMedia('cover')"/></a><div><p class="meta">資材・在庫 {{ $product->availableQuantity() }}</p><h3>{{ $product->name }}</h3></div></article>@endif @endforeach</div></section>@endif
- @if($gallery->isNotEmpty())<section class="section section-gallery"><div class="section-head"><div><p class="eyebrow">GALLERY</p><h2>品牌日常</h2></div></div><div class="swiper js-swiper"><div class="swiper-wrapper">@foreach($gallery as $slide)<div class="swiper-slide">@if(data_get($slide,'url'))<a href="{{ data_get($slide,'url') }}" target="_blank" rel="noopener noreferrer">@endif<x-media-image :media="$slide['media']" />@if(data_get($slide,'title'))<h3>{{ data_get($slide,'title') }}</h3>@endif@if(data_get($slide,'body'))<p>{{ data_get($slide,'body') }}</p>@endif@if(data_get($slide,'url'))</a>@endif</div>@endforeach</div><div class="swiper-button-prev"></div><div class="swiper-button-next"></div><div class="swiper-pagination"></div></div></section>@endif
- <section class="contact-strip"><p class="eyebrow">CONTACT</p><h2>在社群上和我們聊聊</h2><div>@if($brand->facebook_url)<a class="button" href="{{ $brand->facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook ↗</a>@endif @if($brand->instagram_url)<a class="button" href="{{ $brand->instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram ↗</a>@endif</div></section>
+    <section class="hero">
+        <picture>
+            @if ($mobile = $media->get((int) data_get($data, 'hero_mobile_media_id')))
+                <source media="(max-width: 640px)" srcset="{{ $mobile->url('detail') }}">
+            @endif
+            @if ($desktop = $media->get((int) data_get($data, 'hero_desktop_media_id')))
+                <img src="{{ $desktop->url('detail') }}"
+                    alt="{{ $desktop->alt_text ?: data_get($data, 'hero_title', '品牌主視覺') }}" width="{{ $desktop->width }}"
+                    height="{{ $desktop->height }}" fetchpriority="high">
+            @endif
+        </picture>
+        <div class="hero-overlay">
+            <h1>{{ data_get($data, 'hero_title', $brand->name) }}</h1>
+            <p>{{ data_get($data, 'hero_subtitle') }}</p>
+            <a class="button light"
+                href="{{ route('courses.index') }}">{{ data_get($data, 'hero_primary_label', '探索課程') }}</a>
+            <a class="button ghost-light"
+                href="{{ route('shop.index') }}">{{ data_get($data, 'hero_secondary_label', '逛逛商店') }}</a>
+        </div>
+    </section>
+    <section class="section home-intro">
+        @if ($intro = $media->get((int) data_get($data, 'intro_media_id')))
+            <x-media-image :media="$intro" ratio="4/3" />
+        @endif
+        <div>
+            <p class="eyebrow">ABOUT</p>
+            <h2>{{ data_get($data, 'intro_title') }}</h2>
+            <p>{!! nl2br(e(data_get($data, 'intro_body'))) !!}</p>
+            @if (data_get($data, 'intro_link_url'))
+                <a class="text-link" href="{{ data_get($data, 'intro_link_url') }}" target="_blank"
+                    rel="noopener noreferrer">{{ data_get($data, 'intro_link_label', '了解更多') }} →</a>
+            @endif
+        </div>
+    </section>
+    <section class="section">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">WORKSHOPS</p>
+                <h2>精選手作課程</h2>
+            </div>
+            <a href="{{ route('courses.index') }}">查看全部</a>
+        </div>
+        <div class="cards">
+            @forelse($courses as $course)
+                @php($open = $course->sessions->contains(fn($session) => $session->availabilityStatus() === 'open'))
+                <article class="card">
+                    <x-media-image :media="$course->primaryMedia('cover')" />
+                    <div>
+                        <p class="meta">{{ $open ? '開放報名' : '目前無可報名時段' }}</p>
+                        <h3>
+                            <a href="{{ route('courses.show', $course->slug) }}">{{ $course->name }}</a>
+                        </h3>
+                        <p>{{ $course->summary }}</p>
+                    </div>
+                </article>
+            @empty
+                <p class="empty">精選課程準備中。</p>
+            @endforelse
+        </div>
+    </section>
+    @if ($products->isNotEmpty())
+        <section class="section" x-data="{ tab: 'all' }">
+            <div class="section-head">
+                <div>
+                    <p class="eyebrow">FEATURED SHOP</p>
+                    <h2>精選商品</h2>
+                </div>
+                <a href="{{ route('shop.index') }}">查看全部</a>
+            </div>
+            <div class="shop-tabs">
+                <button @click="tab='all'" :class="tab === 'all' ? 'active' : ''">全部</button>
+                <button @click="tab='plants'" :class="tab === 'plants' ? 'active' : ''">植株</button>
+                <button @click="tab='materials'" :class="tab === 'materials' ? 'active' : ''">資材</button>
+            </div>
+            <div class="product-grid">
+                @foreach ($products as $product)
+                    @if ($product instanceof \App\Models\PlantVariety)
+                        <article class="product-card" x-show="tab==='all'||tab==='plants'">
+                            <a href="{{ route('shop.plants.show', $product->slug) }}">
+                                <x-media-image :media="$product->primaryMedia('mother')" />
+                            </a>
+                            <div>
+                                <p class="meta">植株・在庫 {{ $product->availableStock() }}</p>
+                                <h3>{{ $product->name }}</h3>
+                            </div>
+                        </article>
+                    @else
+                        <article class="product-card" x-show="tab==='all'||tab==='materials'">
+                            <a href="{{ route('shop.materials.show', $product->slug) }}">
+                                <x-media-image :media="$product->primaryMedia('cover')" />
+                            </a>
+                            <div>
+                                <p class="meta">資材・在庫 {{ $product->availableQuantity() }}</p>
+                                <h3>{{ $product->name }}</h3>
+                            </div>
+                        </article>
+                    @endif
+                @endforeach
+            </div>
+        </section>
+    @endif
+    @if ($gallery->isNotEmpty())
+        <section class="section section-gallery">
+            <div class="section-head">
+                <div>
+                    <p class="eyebrow">GALLERY</p>
+                    <h2>品牌日常</h2>
+                </div>
+            </div>
+            <div class="swiper js-swiper">
+                <div class="swiper-wrapper">
+                    @foreach ($gallery as $slide)
+                        <div class="swiper-slide">
+                            @if (data_get($slide, 'url'))
+                                <a href="{{ data_get($slide, 'url') }}" target="_blank" rel="noopener noreferrer">
+                            @endif
+                            <x-media-image :media="$slide['media']" />
+                            @if (data_get($slide, 'title'))
+                                <h3>{{ data_get($slide, 'title') }}</h3>
+                            @endif
+                            @if (data_get($slide, 'body'))
+                                <p>{{ data_get($slide, 'body') }}</p>
+                            @endif
+                            @if (data_get($slide, 'url'))
+                                </a>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+                <div class="swiper-button-prev">
+                </div>
+                <div class="swiper-button-next">
+                </div>
+                <div class="swiper-pagination">
+                </div>
+            </div>
+        </section>
+    @endif
+    <section class="contact-strip">
+        <p class="eyebrow">CONTACT</p>
+        <h2>在社群上和我們聊聊</h2>
+        <div>
+            @if ($brand->facebook_url)
+                <a class="button" href="{{ $brand->facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook
+                    ↗</a>
+            @endif
+            @if ($brand->instagram_url)
+                <a class="button" href="{{ $brand->instagram_url }}" target="_blank"
+                    rel="noopener noreferrer">Instagram ↗</a>
+            @endif
+        </div>
+    </section>
 </div>

@@ -1,6 +1,81 @@
 @extends('layouts.admin')
-@section('title',($variety->exists?'編輯':'新增').'品種')
+@section('title', ($variety->exists ? '編輯' : '新增') . '品種')
 @section('content')
-<div class="admin-heading"><div><p class="admin-kicker">PLANT VARIETY</p><h1>{{ $variety->exists?'編輯':'新增' }}品種</h1></div><a href="{{ route('admin.plant-varieties.index') }}">返回列表</a></div><form method="post" action="{{ $variety->exists?route('admin.plant-varieties.update',$variety):route('admin.plant-varieties.store') }}" class="admin-panel admin-form">@csrf @if($variety->exists)@method('PUT')@endif<div class="form-grid"><label>品種名<input name="name" value="{{ old('name',$variety->name) }}" required></label><label>品種學名<input name="scientific_name" value="{{ old('scientific_name',$variety->scientific_name) }}" required></label><label>品種編號<input name="variety_code" value="{{ old('variety_code',$variety->variety_code) }}" required><small>可輸入中英文、數字與連字號</small></label><label>Slug<input name="slug" value="{{ old('slug',$variety->slug) }}" required pattern="[A-Za-z0-9_-]+"></label><label>狀態<select name="status"><option value="draft" @selected(old('status',$variety->status?:'draft')==='draft')>下架</option><option value="published" @selected(old('status',$variety->status)==='published')>販售中</option></select></label><label>排序<input type="number" name="sort_order" min="0" value="{{ old('sort_order',$variety->sort_order??0) }}"></label></div><label>品種介紹<textarea name="description" rows="8">{{ old('description',$variety->description) }}</textarea></label><label>植物照護說明<textarea name="care_instructions" rows="6">{{ old('care_instructions',$variety->care_instructions) }}</textarea></label><details><summary>SEO</summary><label>SEO 標題<input name="seo_title" value="{{ old('seo_title',$variety->seo_title) }}"></label><label>SEO 說明<textarea name="seo_description">{{ old('seo_description',$variety->seo_description) }}</textarea></label></details><button class="admin-button">儲存</button></form>
-@if($variety->exists)<section class="admin-panel"><div class="panel-head"><div><h2>實株</h2><p>完整花牌由「學名＋品種編號＋實株編號」產生。</p></div><a class="admin-button" href="{{ route('admin.plant-specimens.create',$variety) }}">新增實株</a></div><div class="session-list">@foreach($variety->specimens as $specimen)<article><div><strong>{{ $specimen->full_tag_name }}</strong><small>在庫 {{ $specimen->availableQuantity() }}・NT$ {{ number_format((float)$specimen->price) }}</small></div><span class="status {{ $specimen->status }}">{{ $specimen->status==='published'?'販售中':'下架' }}</span><a href="{{ route('admin.plant-specimens.edit',[$variety,$specimen]) }}">編輯</a></article>@endforeach</div></section><livewire:admin.media-manager owner-type="plant_variety" :owner-id="$variety->id" />@endif
+    <div class="admin-heading">
+        <div>
+            <p class="admin-kicker">PLANT VARIETY</p>
+            <h1>{{ $variety->exists ? '編輯' : '新增' }}品種</h1>
+        </div>
+        <a href="{{ route('admin.plant-varieties.index') }}">返回列表</a>
+    </div>
+    <form method="post"
+        action="{{ $variety->exists ? route('admin.plant-varieties.update', $variety) : route('admin.plant-varieties.store') }}"
+        class="admin-panel admin-form">
+        @csrf
+        @if ($variety->exists)
+            @method('PUT')
+        @endif
+        <div class="form-grid">
+            <label>品種名<input name="name" value="{{ old('name', $variety->name) }}" required>
+            </label>
+            <label>品種學名<input name="scientific_name" value="{{ old('scientific_name', $variety->scientific_name) }}"
+                    required>
+            </label>
+            <label>品種編號<input name="variety_code" value="{{ old('variety_code', $variety->variety_code) }}" required>
+                <small>可輸入中英文、數字與連字號</small>
+            </label>
+            <label>Slug<input name="slug" value="{{ old('slug', $variety->slug) }}" required pattern="[A-Za-z0-9_-]+">
+            </label>
+            <label>狀態<select name="status">
+                    <option value="draft" @selected(old('status', $variety->status ?: 'draft') === 'draft')>下架</option>
+                    <option value="published" @selected(old('status', $variety->status) === 'published')>販售中</option>
+                </select>
+            </label>
+            <label>排序<input type="number" name="sort_order" min="0"
+                    value="{{ old('sort_order', $variety->sort_order ?? 0) }}">
+            </label>
+        </div>
+        <label>品種介紹
+            <textarea name="description" rows="8">{{ old('description', $variety->description) }}</textarea>
+        </label>
+        <label>植物照護說明
+            <textarea name="care_instructions" rows="6">{{ old('care_instructions', $variety->care_instructions) }}</textarea>
+        </label>
+        <details>
+            <summary>SEO</summary>
+            <label>SEO 標題<input name="seo_title" value="{{ old('seo_title', $variety->seo_title) }}">
+            </label>
+            <label>SEO 說明
+                <textarea name="seo_description">{{ old('seo_description', $variety->seo_description) }}</textarea>
+            </label>
+        </details>
+        <button class="admin-button">儲存</button>
+    </form>
+    @if ($variety->exists)
+        <section class="admin-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>實株</h2>
+                    <p>完整花牌由「學名＋品種編號＋實株編號」產生。</p>
+                </div>
+                <a class="admin-button" href="{{ route('admin.plant-specimens.create', $variety) }}">新增實株</a>
+            </div>
+            <div class="session-list">
+                @foreach ($variety->specimens as $specimen)
+                    <article>
+                        <div>
+                            <strong>{{ $specimen->full_tag_name }}</strong>
+                            <small>在庫
+                                {{ $specimen->availableQuantity() }}・NT$
+                                {{ number_format((float) $specimen->price) }}</small>
+                        </div>
+                        <span
+                            class="status {{ $specimen->status }}">{{ $specimen->status === 'published' ? '販售中' : '下架' }}</span>
+                        <a href="{{ route('admin.plant-specimens.edit', [$variety, $specimen]) }}">編輯</a>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+        <livewire:admin.media-manager owner-type="plant_variety" :owner-id="$variety->id" />
+    @endif
 @endsection

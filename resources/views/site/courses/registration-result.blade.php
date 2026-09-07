@@ -1,6 +1,41 @@
 @extends('layouts.site')
-@section('title','報名完成｜'.$brand->name)
+@section('title', '報名完成｜' . $brand->name)
 @section('content')
-<section class="page-hero compact"><p class="eyebrow">REGISTRATION RECEIVED</p><h1>已收到報名</h1><p>報名編號 {{ $registration->reference }}</p></section>
-<section class="section result-grid"><article><h2>{{ $registration->course->name }}</h2><dl class="summary-list"><dt>場次</dt><dd>{{ $registration->session->starts_at->format('Y/m/d H:i') }}</dd><dt>地點</dt><dd>{{ $registration->session->city }}・{{ $registration->session->venue_name }}</dd><dt>方案</dt><dd>{{ $registration->plan_name }}（{{ $registration->participants }} 人）</dd><dt>應付金額</dt><dd>NT$ {{ number_format((float)$registration->amount) }}</dd><dt>匯款期限</dt><dd>{{ $registration->payment_due_at->format('Y/m/d H:i') }}</dd><dt>目前狀態</dt><dd>{{ ['awaiting_payment'=>'等待匯款','awaiting_review'=>'等待核對','confirmed'=>'報名確認','overdue'=>'已逾匯款期限','cancelled'=>'已取消'][$registration->displayStatus()] }}</dd></dl><div class="warning">請於一日內完成匯款，並私訊品牌粉專提供帳號末五碼供人工核對。取消報名也請直接私訊品牌粉專。</div></article><aside class="bank-card"><h2>匯款資訊</h2><x-bank-information :bank="$registration->bank_snapshot"/>@if($registration->course->notion_url)<h2>行前通知</h2><a href="{{ route('course-notice.show',$registration->course->slug) }}"><img class="notice-qr" src="{{ route('course-notice.qr',$registration->course->slug) }}" alt="掃描開啟行前通知"></a><a class="button" href="{{ route('course-notice.show',$registration->course->slug) }}">開啟行前通知</a>@endif</aside></section>
+    <section class="page-hero compact">
+        <p class="eyebrow">REGISTRATION RECEIVED</p>
+        <h1>已收到報名</h1>
+        <p>報名編號 {{ $registration->reference }}</p>
+    </section>
+    <section class="section result-grid">
+        <article>
+            <h2>{{ $registration->course->name }}</h2>
+            <dl class="summary-list">
+                <dt>場次</dt>
+                <dd>{{ $registration->session->starts_at->format('Y/m/d H:i') }}</dd>
+                <dt>地點</dt>
+                <dd>{{ $registration->session->city }}・{{ $registration->session->venue_name }}</dd>
+                <dt>方案</dt>
+                <dd>{{ $registration->plan_name }}（{{ $registration->participants }} 人）</dd>
+                <dt>應付金額</dt>
+                <dd>NT$ {{ number_format((float) $registration->amount) }}</dd>
+                <dt>匯款期限</dt>
+                <dd>{{ $registration->payment_due_at->format('Y/m/d H:i') }}</dd>
+                <dt>目前狀態</dt>
+                <dd>{{ ['awaiting_payment' => '等待匯款', 'awaiting_review' => '等待核對', 'confirmed' => '報名確認', 'overdue' => '已逾匯款期限', 'cancelled' => '已取消'][$registration->displayStatus()] }}
+                </dd>
+            </dl>
+            <div class="warning">請於一日內完成匯款，並私訊品牌粉專提供帳號末五碼供人工核對。取消報名也請直接私訊品牌粉專。</div>
+        </article>
+        <aside class="bank-card">
+            <h2>匯款資訊</h2>
+            <x-bank-information :bank="$registration->bank_snapshot" />
+            @if ($registration->course->notion_url)
+                <h2>行前通知</h2>
+                <a href="{{ route('course-notice.show', $registration->course->slug) }}">
+                    <img class="notice-qr" src="{{ route('course-notice.qr', $registration->course->slug) }}" alt="掃描開啟行前通知">
+                </a>
+                <a class="button" href="{{ route('course-notice.show', $registration->course->slug) }}">開啟行前通知</a>
+            @endif
+        </aside>
+    </section>
 @endsection
