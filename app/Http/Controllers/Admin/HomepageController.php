@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\HomepageContent;
+use App\Models\{Material, PlantVariety};
 use App\Services\AuditService;
 use App\Support\BrandContext;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ class HomepageController extends Controller
             'homepage' => $content,
             'draft' => $content->draft_data,
             'courses' => $context->brand()->courses()->orderBy('sort_order')->get(),
+            'varieties' => PlantVariety::where('brand_id',$context->id())->orderBy('sort_order')->get(),
+            'materials' => Material::where('brand_id',$context->id())->orderBy('name')->get(),
         ]);
     }
 
@@ -40,6 +43,8 @@ class HomepageController extends Controller
             'intro_link_url' => 'nullable|url:http,https|max:2048',
             'featured_course_ids' => 'nullable|array|max:6',
             'featured_course_ids.*' => ['integer', Rule::exists('courses', 'id')->where('brand_id', $context->id())],
+            'featured_product_keys' => 'nullable|array|max:12',
+            'featured_product_keys.*' => ['string','regex:/^(plant|material):[0-9]+$/'],
             'gallery' => 'nullable|array|max:20',
             'gallery.*.enabled' => 'nullable|boolean',
             'gallery.*.title' => 'nullable|string|max:160',
@@ -60,6 +65,8 @@ class HomepageController extends Controller
         unset($data['gallery']);
         $data['gallery_items'] = $gallery;
         $data['featured_course_ids'] = array_values(array_unique(array_map('intval', $data['featured_course_ids'] ?? [])));
+        $data['featured_product_keys'] = array_values(array_unique($data['featured_product_keys'] ?? []));
+        foreach($data['featured_product_keys'] as $key){[$type,$id]=explode(':',$key,2);$model=$type==='plant'?PlantVariety::class:Material::class;abort_unless($model::where('brand_id',$context->id())->whereKey((int)$id)->exists(),422,'精選商品與品牌不符。');}
         $before = $content->draft_data;
         $content->update(['draft_data' => $data]);
         $audit->record('homepage.draft_saved', $content, $before, $data);

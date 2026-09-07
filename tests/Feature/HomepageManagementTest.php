@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Brand, Course, HomepageContent, User};
+use App\Models\{Brand, Course, HomepageContent, Material, PlantSpecimen, PlantVariety, User};
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -65,5 +65,22 @@ class HomepageManagementTest extends TestCase
 
         $this->get('http://brand-a.localhost/')->assertSee('brand-home-verdant')->assertSee('>Brand A<', false)->assertDontSee('>Brand B<', false);
         $this->get('http://brand-b.localhost/')->assertSee('brand-home-terracotta')->assertSee('>Brand B<', false)->assertDontSee('>Brand A<', false);
+    }
+
+    public function test_featured_products_are_tenant_scoped_and_sold_out_plants_are_hidden(): void
+    {
+        [$brand,$admin]=$this->context();
+        $plant=PlantVariety::create(['brand_id'=>$brand->id,'name'=>'精選植株','scientific_name'=>'Plant A','variety_code'=>'A-1','slug'=>'plant-a','status'=>'published','published_at'=>now()]);
+        PlantSpecimen::forceCreate(['brand_id'=>$brand->id,'plant_variety_id'=>$plant->id,'sequence'=>1,'full_tag_name'=>'Plant A A-1 1','price'=>1000,'stock_on_hand'=>1,'status'=>'published']);
+        $sold=PlantVariety::create(['brand_id'=>$brand->id,'name'=>'零庫存植株','scientific_name'=>'Plant B','variety_code'=>'B-1','slug'=>'plant-b','status'=>'published','published_at'=>now()]);
+        PlantSpecimen::forceCreate(['brand_id'=>$brand->id,'plant_variety_id'=>$sold->id,'sequence'=>1,'full_tag_name'=>'Plant B B-1 1','price'=>1000,'stock_on_hand'=>0,'status'=>'published']);
+        $material=Material::create(['brand_id'=>$brand->id,'product_code'=>'M-1','name'=>'精選資材','slug'=>'material','price'=>200,'stock_on_hand'=>3,'low_stock_threshold'=>1,'status'=>'published','published_at'=>now()]);
+        $other=Brand::factory()->create(['slug'=>'other','domain'=>'other.localhost']);
+        $foreign=Material::create(['brand_id'=>$other->id,'product_code'=>'X','name'=>'外部資材','slug'=>'external','price'=>1,'stock_on_hand'=>1,'low_stock_threshold'=>0,'status'=>'published']);
+        $client=$this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost']);
+        $client->put('/admin/homepage',['featured_product_keys'=>['material:'.$foreign->id]])->assertStatus(422);
+        $client->put('/admin/homepage',['featured_product_keys'=>['plant:'.$plant->id,'plant:'.$sold->id,'material:'.$material->id]])->assertRedirect();
+        $client->post('/admin/homepage/publish')->assertRedirect();
+        $this->get('http://brand-a.localhost/')->assertOk()->assertSee('精選植株')->assertSee('精選資材')->assertDontSee('零庫存植株')->assertDontSee('外部資材');
     }
 }

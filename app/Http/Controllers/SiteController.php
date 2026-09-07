@@ -24,13 +24,19 @@ class SiteController extends Controller
         $courseIds = array_values(array_map('intval', $data['featured_course_ids'] ?? []));
         $courseModels = $brand->courses()->published()->whereIn('id', $courseIds)->with(['plans', 'sessions.registrations'])->get()->keyBy('id');
         $courses = collect($courseIds)->map(fn ($id) => $courseModels->get($id))->filter();
+        $productKeys = $data['featured_product_keys'] ?? [];
+        $plantIds=collect($productKeys)->filter(fn($key)=>str_starts_with($key,'plant:'))->map(fn($key)=>(int)str($key)->after(':')->toString());
+        $materialIds=collect($productKeys)->filter(fn($key)=>str_starts_with($key,'material:'))->map(fn($key)=>(int)str($key)->after(':')->toString());
+        $plantModels=PlantVariety::where('brand_id',$brand->id)->published()->whereIn('id',$plantIds)->with(['specimens'=>fn($q)=>$q->where('status','published')])->get()->filter(fn($item)=>$item->availableStock()>0)->keyBy(fn($item)=>'plant:'.$item->id);
+        $materialModels=Material::where('brand_id',$brand->id)->published()->whereIn('id',$materialIds)->get()->keyBy(fn($item)=>'material:'.$item->id);
+        $products=collect($productKeys)->map(fn($key)=>$plantModels->get($key)??$materialModels->get($key))->filter()->values();
         $gallery = collect($data['gallery_items'] ?? [])->map(function ($item) use ($media) {
             $item['media'] = $media->get((int) ($item['media_id'] ?? 0));
             return $item;
         })->filter(fn ($item) => $item['media']);
         $view = 'site.brands.'.$brand->slug.'.home';
         if (! View::exists($view)) $view = 'site.home';
-        return view($view, compact('brand', 'homepage', 'data', 'media', 'courses', 'gallery', 'preview'));
+        return view($view, compact('brand', 'homepage', 'data', 'media', 'courses', 'products', 'gallery', 'preview'));
     }
 
     public function courses()
