@@ -36,7 +36,7 @@ class CourseRegistrationController extends Controller
         ]);
         $duplicate = null;
         if (filled($data['remittance_last_five'])) {
-            $duplicate = CourseRegistration::where('brand_id', $context->id())
+            $duplicate = CourseRegistration::where('brand_id', $context->id())->where('status','awaiting_review')
                 ->where('remittance_last_five', $data['remittance_last_five'])->whereKeyNot($registration->id)->exists();
         }
         $before = $registration->toArray();

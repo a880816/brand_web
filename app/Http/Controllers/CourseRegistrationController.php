@@ -27,6 +27,7 @@ class CourseRegistrationController extends Controller
             'social_platform' => ['required', Rule::in(['facebook', 'instagram', 'line', 'other'])],
             'social_account' => 'required|string|max:255', 'notes' => 'nullable|string|max:2000',
             'remittance_last_five' => ['nullable', 'regex:/^[0-9]{5}$/'],
+            'company_website' => 'prohibited',
         ]);
         $registration = $service->register($context->brand(), $session, (int) $data['course_plan_id'], $data);
         return redirect()->route('registrations.show', $registration->reference);

@@ -26,7 +26,7 @@ class AuditService
     {
         $clean = [];
         foreach ($data as $key => $value) {
-            if (preg_match('/password|token|secret|session|cookie|file(_content)?/i', (string) $key)) continue;
+            if (preg_match('/password|token|secret|session|cookie|file(_content)?|bank_snapshot|bank_account_number/i', (string) $key)) continue;
             $clean[$key] = is_array($value) ? $this->clean($value) : $value;
         }
         return $clean;

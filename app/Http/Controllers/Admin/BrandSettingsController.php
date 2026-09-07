@@ -16,7 +16,7 @@ class BrandSettingsController extends Controller
         $brand=$context->brand();$this->authorize('update',$brand);
         $rules=[
             'name'=>'required|string|max:160','primary_color'=>'required|regex:/^#[0-9A-Fa-f]{6}$/','secondary_color'=>'required|regex:/^#[0-9A-Fa-f]{6}$/','accent_color'=>'required|regex:/^#[0-9A-Fa-f]{6}$/','background_color'=>'required|regex:/^#[0-9A-Fa-f]{6}$/','text_color'=>'required|regex:/^#[0-9A-Fa-f]{6}$/',
-            'seo_title'=>'nullable|string|max:255','seo_description'=>'nullable|string|max:1000','facebook_url'=>'nullable|url:http,https|max:2000','instagram_url'=>'nullable|url:http,https|max:2000',
+            'seo_title'=>'nullable|string|max:255','seo_description'=>'nullable|string|max:1000','facebook_url'=>'nullable|url:https|max:2000','instagram_url'=>'nullable|url:https|max:2000',
             'home_menu_label'=>'required|string|max:30','courses_menu_label'=>'required|string|max:30','shop_menu_label'=>'required|string|max:30',
             'bank_name'=>'nullable|string|max:100','bank_code'=>'nullable|string|max:20','bank_branch'=>'nullable|string|max:100','bank_account_name'=>'nullable|string|max:100','bank_account_number'=>'nullable|string|max:100','remittance_notice'=>'nullable|string|max:2000',
         ];

@@ -78,7 +78,7 @@ class CourseSessionController extends Controller
             'starts_at' => 'required|date', 'ends_at' => 'required|date|after:starts_at',
             'city' => 'required|string|max:50', 'venue_name' => 'required|string|max:160',
             'address' => 'required|string|max:500',
-            'google_maps_url' => ['required', 'url:http,https', 'max:2000'],
+            'google_maps_url' => ['required', 'url:https', 'max:2000', function(string $attribute,mixed $value,\Closure $fail){$host=strtolower((string)parse_url($value,PHP_URL_HOST));if(!in_array($host,['maps.google.com','www.google.com','goo.gl'],true)&&!str_ends_with($host,'.google.com'))$fail('Google Maps 連結網域不正確。');}],
             'capacity' => 'required|integer|min:1|max:10000',
             'registration_close_days' => 'nullable|integer|min:0|max:365',
             'status' => ['required', Rule::in(['draft', 'open', 'closed', 'cancelled'])],

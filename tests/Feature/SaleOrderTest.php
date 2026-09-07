@@ -14,7 +14,7 @@ class SaleOrderTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp():void{parent::setUp();$this->withoutMiddleware(ValidateCsrfToken::class);Carbon::setTestNow('2026-09-04 10:00:00');}
+    protected function setUp():void{parent::setUp();$this->withoutMiddleware([ValidateCsrfToken::class,\Illuminate\Routing\Middleware\ThrottleRequests::class]);Carbon::setTestNow('2026-09-04 10:00:00');}
     protected function tearDown():void{Carbon::setTestNow();parent::tearDown();}
 
     private function fixture():array
@@ -65,5 +65,13 @@ class SaleOrderTest extends TestCase
         [$brand,$admin]=$this->fixture();$other=Brand::factory()->create(['slug'=>'other','domain'=>'other.localhost']);$variety=PlantVariety::create(['brand_id'=>$other->id,'name'=>'外部','scientific_name'=>'Other','variety_code'=>'O-1','slug'=>'other','status'=>'published']);$foreign=PlantSpecimen::forceCreate(['brand_id'=>$other->id,'plant_variety_id'=>$variety->id,'sequence'=>1,'full_tag_name'=>'Other O-1 1','price'=>1,'stock_on_hand'=>1,'status'=>'published']);
         $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])->post('/admin/orders',['lines'=>[['url'=>$this->specimenUrl($foreign),'quantity'=>1]]])->assertSessionHasErrors('lines.0.url');
         $this->assertDatabaseCount('sale_orders',0);
+    }
+
+    public function test_spoofed_host_and_public_form_honeypot_are_rejected():void
+    {
+        [$brand,$admin,$exact]=$this->fixture();
+        try{app(SaleOrderService::class)->create($brand,$admin,[['url'=>"https://evil.example/shop/plants/plant/specimens/{$exact->id}",'quantity'=>1]]);$this->fail('Spoofed host accepted');}catch(ValidationException $exception){$this->assertArrayHasKey('lines.0.url',$exception->errors());}
+        [$order,$token]=app(SaleOrderService::class)->create($brand,$admin,[['url'=>$this->specimenUrl($exact),'quantity'=>1]]);
+        $this->put("http://brand-a.localhost/order-recipient/{$order->reference}/{$token}",$this->recipientData(['company_website'=>'spam.example']))->assertSessionHasErrors('company_website');
     }
 }

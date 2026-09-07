@@ -16,7 +16,7 @@ class CourseRegistrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware(ValidateCsrfToken::class);
+        $this->withoutMiddleware([ValidateCsrfToken::class, \Illuminate\Routing\Middleware\ThrottleRequests::class]);
         Carbon::setTestNow('2026-09-04 10:00:00');
     }
 
@@ -99,5 +99,13 @@ class CourseRegistrationTest extends TestCase
         $this->assertSame('cancelled', $two->fresh()->status);
         $this->assertSame(2, $session->fresh()->remainingCapacity());
         $this->assertNotNull($one->fresh());
+    }
+
+    public function test_registration_honeypot_is_rejected(): void
+    {
+        [, $course, $session, $plan] = $this->fixture();
+        $this->post("http://brand-a.localhost/courses/{$course->slug}/sessions/{$session->id}/register", $this->payload($plan->id, ['company_website'=>'spam.example']))
+            ->assertSessionHasErrors('company_website');
+        $this->assertDatabaseCount('course_registrations', 0);
     }
 }

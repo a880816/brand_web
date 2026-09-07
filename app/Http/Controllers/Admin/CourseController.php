@@ -110,7 +110,7 @@ class CourseController extends Controller
             'description' => 'nullable|string|max:50000',
             'suitable_for' => 'nullable|string|max:10000',
             'precautions' => 'nullable|string|max:10000',
-            'notion_url' => ['nullable', 'url:http,https', 'max:2000', function (string $attribute, mixed $value, \Closure $fail) {
+            'notion_url' => ['nullable', 'url:https', 'max:2000', function (string $attribute, mixed $value, \Closure $fail) {
                 if (! filled($value)) return;
                 $host = strtolower((string) parse_url($value, PHP_URL_HOST));
                 if (! in_array($host, ['notion.so', 'www.notion.so'], true) && ! str_ends_with($host, '.notion.site')) {

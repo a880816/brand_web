@@ -89,4 +89,17 @@ class CourseManagementTest extends TestCase
         $this->assertLessThan(strpos($response->getContent(), '無場次課程'), strpos($response->getContent(), '可報名課程'));
         $this->get('http://brand-a.localhost/courses/open')->assertOk()->assertSee('選擇課程場次');
     }
+
+    public function test_external_course_links_use_host_allowlists(): void
+    {
+        [$brand, $admin] = $this->context();$course=$this->course($brand);
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])
+            ->post("/admin/courses/{$course->id}/sessions",$this->payload(['google_maps_url'=>'https://evil.example/map']))
+            ->assertSessionHasErrors('google_maps_url');
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost'])
+            ->put("/admin/courses/{$course->id}",[
+                'name'=>$course->name,'slug'=>$course->slug,'notion_url'=>'https://evil.example/notice',
+                'plans'=>[['name'=>'雙人方案','participants'=>2,'price'=>2000,'is_enabled'=>1]],
+            ])->assertSessionHasErrors('notion_url');
+    }
 }

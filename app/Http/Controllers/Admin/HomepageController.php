@@ -40,7 +40,7 @@ class HomepageController extends Controller
             'intro_body' => 'nullable|string|max:3000',
             'intro_media_id' => 'nullable|integer',
             'intro_link_label' => 'nullable|string|max:40',
-            'intro_link_url' => 'nullable|url:http,https|max:2048',
+            'intro_link_url' => 'nullable|url:https|max:2048',
             'featured_course_ids' => 'nullable|array|max:6',
             'featured_course_ids.*' => ['integer', Rule::exists('courses', 'id')->where('brand_id', $context->id())],
             'featured_product_keys' => 'nullable|array|max:12',
@@ -49,7 +49,7 @@ class HomepageController extends Controller
             'gallery.*.enabled' => 'nullable|boolean',
             'gallery.*.title' => 'nullable|string|max:160',
             'gallery.*.body' => 'nullable|string|max:500',
-            'gallery.*.url' => 'nullable|url:http,https|max:2048',
+            'gallery.*.url' => 'nullable|url:https|max:2048',
         ]);
 
         $media = $content->media()->pluck('collection', 'id');
