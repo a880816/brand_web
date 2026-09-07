@@ -33,3 +33,4 @@
 @media(max-width:600px){.order-line{grid-template-columns:1fr 90px}.order-line button{grid-column:1/-1}.copy-row{grid-template-columns:1fr}}
 .activity small{display:block;color:#738079}.quick-links{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.quick-links a{border:1px solid #dce3df;padding:1rem;border-radius:7px}.quick-links a:hover{background:#edf3ef}
 .honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.detail-grid>*{min-width:0}.detail-grid .js-swiper{min-width:0;max-width:100%}
