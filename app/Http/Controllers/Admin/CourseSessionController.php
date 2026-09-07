@@ -101,7 +101,7 @@ class CourseSessionController extends Controller
             'address' => 'required|string|max:500',
             'google_maps_url' => ['required', 'url:https', 'max:2000', function (string $attribute, mixed $value, \Closure $fail) {
                 $host = strtolower((string) parse_url($value, PHP_URL_HOST));
-                if (! in_array($host, ['maps.google.com', 'www.google.com', 'goo.gl'], true) && ! str_ends_with($host, '.google.com')) {
+                if (! in_array($host, ['maps.google.com', 'www.google.com', 'maps.app.goo.gl'], true) && ! str_ends_with($host, '.google.com')) {
                     $fail('Google Maps 連結網域不正確。');
                 }
             }],
