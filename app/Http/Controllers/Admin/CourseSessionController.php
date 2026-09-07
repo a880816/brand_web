@@ -58,6 +58,17 @@ class CourseSessionController extends Controller
         return back()->with('status', '場次已更新。');
     }
 
+    public function destroy(Course $course, CourseSession $session, BrandContext $context, AuditService $audit)
+    {
+        $course = $this->course($course, $context);
+        $session = $this->session($course, $session, $context);
+        $this->authorize('delete', $session);
+        abort_if($session->registrations()->exists(), 422, '已有報名紀錄的場次不可刪除，請改為取消場次。');
+        $audit->record('course_sessions.deleted', $session, $session->load('plans')->toArray());
+        $session->delete();
+        return redirect()->route('admin.courses.edit', $course)->with('status', '場次已刪除。');
+    }
+
     private function course(Course $course, BrandContext $context): Course
     {
         abort_unless($course->brand_id === $context->id(), 404);

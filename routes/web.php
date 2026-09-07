@@ -44,6 +44,7 @@ Route::middleware('brand')->group(function () {
         Route::post('/courses/{course}/sessions',[CourseSessionController::class,'store'])->name('course-sessions.store');
         Route::get('/courses/{course}/sessions/{session}/edit',[CourseSessionController::class,'edit'])->name('course-sessions.edit');
         Route::put('/courses/{course}/sessions/{session}',[CourseSessionController::class,'update'])->name('course-sessions.update');
+        Route::delete('/courses/{course}/sessions/{session}',[CourseSessionController::class,'destroy'])->name('course-sessions.destroy');
         Route::get('/registrations',[AdminCourseRegistrationController::class,'index'])->name('registrations.index');
         Route::get('/registrations/{registration}/edit',[AdminCourseRegistrationController::class,'edit'])->name('registrations.edit');
         Route::put('/registrations/{registration}',[AdminCourseRegistrationController::class,'update'])->name('registrations.update');

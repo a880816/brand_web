@@ -102,4 +102,15 @@ class CourseManagementTest extends TestCase
                 'plans'=>[['name'=>'雙人方案','participants'=>2,'price'=>2000,'is_enabled'=>1]],
             ])->assertSessionHasErrors('notion_url');
     }
+
+    public function test_empty_session_can_be_deleted_but_registered_session_is_retained(): void
+    {
+        [$brand,$admin]=$this->context();$course=$this->course($brand);$empty=$course->sessions()->create($this->payload(['status'=>'draft'])+['brand_id'=>$brand->id]);
+        $client=$this->actingAs($admin)->withServerVariables(['HTTP_HOST'=>'brand-a.localhost']);
+        $client->delete("/admin/courses/{$course->id}/sessions/{$empty->id}")->assertRedirect();$this->assertSoftDeleted('course_sessions',['id'=>$empty->id]);
+
+        $registered=$course->sessions()->create($this->payload()+['brand_id'=>$brand->id]);$plan=$course->plans()->first();
+        $registered->registrations()->create(['reference'=>(string)\Illuminate\Support\Str::uuid(),'brand_id'=>$brand->id,'course_id'=>$course->id,'course_plan_id'=>$plan->id,'contact_name'=>'客人','phone'=>'0912345678','email'=>'guest@example.test','social_platform'=>'line','social_account'=>'guest','participants'=>$plan->participants,'plan_name'=>$plan->name,'amount'=>$plan->price,'status'=>'awaiting_payment','payment_due_at'=>now()->addDay(),'bank_snapshot'=>[]]);
+        $client->delete("/admin/courses/{$course->id}/sessions/{$registered->id}")->assertStatus(422);$this->assertDatabaseHas('course_sessions',['id'=>$registered->id,'deleted_at'=>null]);
+    }
 }
