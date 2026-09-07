@@ -227,4 +227,40 @@ class CourseManagementTest extends TestCase
         $client->delete("/admin/courses/{$course->id}/sessions/{$registered->id}")->assertStatus(422);
         $this->assertDatabaseHas('course_sessions', ['id' => $registered->id, 'deleted_at' => null]);
     }
+
+    public function test_registered_course_delete_redirects_back_with_actionable_error(): void
+    {
+        [$brand, $admin] = $this->context();
+        $course = $this->course($brand);
+        $plan = $course->plans()->first();
+        $session = $course->sessions()->create($this->payload() + ['brand_id' => $brand->id]);
+        $session->registrations()->create([
+            'reference' => (string) Str::uuid(),
+            'brand_id' => $brand->id,
+            'course_id' => $course->id,
+            'course_plan_id' => $plan->id,
+            'contact_name' => '客人',
+            'phone' => '0912345678',
+            'email' => 'guest@example.test',
+            'social_platform' => 'line',
+            'social_account' => 'guest',
+            'participants' => $plan->participants,
+            'plan_name' => $plan->name,
+            'amount' => $plan->price,
+            'status' => 'awaiting_payment',
+            'payment_due_at' => now()->addDay(),
+            'bank_snapshot' => [],
+        ]);
+
+        $editUrl = '/admin/courses/'.$course->id.'/edit';
+        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'brand-a.localhost'])
+            ->from($editUrl)
+            ->delete('/admin/courses/'.$course->id)
+            ->assertRedirect($editUrl)
+            ->assertSessionHasErrors([
+                'course' => '已有報名紀錄的課程不可刪除，請改為下架。',
+            ]);
+
+        $this->assertNotSoftDeleted('courses', ['id' => $course->id]);
+    }
 }

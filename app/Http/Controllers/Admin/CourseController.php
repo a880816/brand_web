@@ -94,7 +94,11 @@ class CourseController extends Controller
     {
         $course = $this->tenantCourse($course, $context);
         $this->authorize('delete', $course);
-        abort_if($course->registrations()->exists(), 422, '已有報名紀錄的課程不可刪除，請改為下架。');
+        if ($course->registrations()->exists()) {
+            return back()->withErrors([
+                'course' => '已有報名紀錄的課程不可刪除，請改為下架。',
+            ]);
+        }
         $audit->record('courses.deleted', $course, $course->toArray());
         $course->delete();
 
