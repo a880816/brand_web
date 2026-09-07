@@ -35,3 +35,4 @@
 .honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
 .detail-grid>*{min-width:0}.detail-grid .js-swiper{min-width:0;max-width:100%}
 .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.upload-picker{display:grid;gap:.6rem;align-self:stretch}.upload-picker>.admin-button{justify-self:start}.upload-selection{color:#66726c;font-size:.82rem;min-width:0}.upload-selection strong{display:block;color:#34433c}.upload-selection ul{margin:.35rem 0 0;padding-left:1.15rem;max-height:5rem;overflow:auto}.upload-selection li{overflow-wrap:anywhere}
+@media(min-width:901px){.admin-table td.table-actions{display:table-cell;white-space:nowrap}.admin-table td.table-actions>a+a{margin-left:1rem}}
