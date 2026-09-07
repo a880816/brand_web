@@ -13,7 +13,7 @@ class CommerceDataModelTest extends TestCase
     public function test_new_course_shop_and_order_tables_are_available(): void
     {
         foreach ([
-            'homepage_contents', 'course_sessions', 'course_plans', 'course_registrations',
+            'sessions', 'homepage_contents', 'course_sessions', 'course_plans', 'course_registrations',
             'plant_varieties', 'plant_specimens', 'materials', 'sale_orders',
             'sale_order_items', 'plant_sold_units',
         ] as $table) {
