@@ -10,6 +10,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->removeSeededMedia();
+
         $brands = [
             [
                 'name' => '蕨光植研', 'slug' => 'verdant', 'domain' => 'brand-a.localhost',
@@ -89,27 +91,16 @@ class DatabaseSeeder extends Seeder
             ];
             $homepage->update(['draft_data' => $homepageData, 'published_data' => $homepageData]);
 
-            foreach ([[$homepage, 'hero_desktop'], [$homepage, 'gallery'], [$course, 'cover'], [$variety, 'mother'], [$specimen, 'specimen'], [$material, 'cover']] as [$owner, $collection]) {
-                $this->addDemoMedia($brand, $owner, $collection);
-            }
         }
 
         $this->call(AdminUserSeeder::class);
     }
 
-    private function addDemoMedia(Brand $brand, object $owner, string $collection): void
+    private function removeSeededMedia(): void
     {
-        if ($owner->mediaFor($collection)->exists()) return;
-        $source = public_path('demo/botanical-studio.png');
-        if (! is_file($source)) return;
-        $path = 'brands/'.$brand->id.'/'.$collection.'/demo-'.$owner->getTable().'-'.$owner->id.'.png';
-        Storage::disk('public')->put($path, file_get_contents($source));
-        [$width, $height] = getimagesize($source);
-        Media::create([
-            'brand_id' => $brand->id, 'mediable_type' => $owner->getMorphClass(), 'mediable_id' => $owner->id,
-            'collection' => $collection, 'disk' => 'public', 'path' => $path,
-            'original_filename' => 'botanical-studio.png', 'mime_type' => 'image/png', 'file_size' => filesize($source),
-            'width' => $width, 'height' => $height, 'alt_text' => $brand->name.'展示圖片', 'sort_order' => 0, 'is_primary' => true,
-        ]);
+        Media::where('original_filename', 'botanical-studio.png')->whereNull('variants')->get()->each(function (Media $media) {
+            Storage::disk($media->disk)->delete(array_merge([$media->path], array_values($media->variants ?? [])));
+            $media->forceDelete();
+        });
     }
 }

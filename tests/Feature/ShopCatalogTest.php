@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Brand, Material, PlantSpecimen, PlantVariety, User};
+use App\Models\{Brand, Material, Media, PlantSpecimen, PlantVariety, User};
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -62,5 +62,14 @@ class ShopCatalogTest extends TestCase
         $this->get('http://brand-a.localhost/shop/plants/ridleyi')->assertOk()->assertSee('實株 1');
         $this->get('http://brand-a.localhost/shop/plants/ridleyi/specimens/'.$specimen->id)->assertOk()->assertSee('聯絡購買')->assertSee('皇冠鹿角蕨');
         $this->get('http://brand-a.localhost/shop/materials/moss')->assertOk()->assertSee('售完');
+    }
+
+    public function test_variety_cover_falls_back_to_uploaded_specimen_photo(): void
+    {
+        [$brand]=$this->context();$variety=$this->variety($brand);
+        $specimen=PlantSpecimen::forceCreate(['brand_id'=>$brand->id,'plant_variety_id'=>$variety->id,'sequence'=>1,'full_tag_name'=>'Platycerium ridleyi 皇冠-01 1','price'=>1500,'stock_on_hand'=>1,'reserved_quantity'=>0,'status'=>'published','published_at'=>now()]);
+        $photo=Media::factory()->create(['brand_id'=>$brand->id,'mediable_type'=>$specimen->getMorphClass(),'mediable_id'=>$specimen->id,'collection'=>'specimen','is_primary'=>true]);
+        $this->assertSame($photo->id,$variety->primaryMedia('mother')->id);
+        $this->get('http://brand-a.localhost/shop')->assertOk()->assertSee($photo->url('detail'), false);
     }
 }

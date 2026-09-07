@@ -8,5 +8,4 @@
   <button class="admin-button" type="submit" wire:loading.attr="disabled"><span wire:loading.remove>上傳圖片</span><span wire:loading>處理中…</span></button>
  </form>
  <div class="media-list">@forelse($media as $image)<article><img src="{{ $image->url() }}" alt="{{ $image->alt_text }}"><div><strong>{{ $image->original_filename }}</strong><small>{{ $image->width }}×{{ $image->height }} ・ {{ number_format($image->file_size/1024) }} KB</small><span>{{ $image->is_primary?'主圖':'排序 '.$image->sort_order }}</span></div><div class="row-actions"><button type="button" wire:click="move({{ $image->id }},'up')" aria-label="上移">↑</button><button type="button" wire:click="move({{ $image->id }},'down')" aria-label="下移">↓</button>@unless($image->is_primary)<button type="button" wire:click="setPrimary({{ $image->id }})">設為主圖</button>@endunless<button class="danger" type="button" wire:click="delete({{ $image->id }})" wire:confirm="確定刪除這張圖片？">刪除</button></div></article>@empty<p class="admin-empty">此分類尚未上傳圖片。</p>@endforelse</div>
- @if($ownerType==='page')<livewire:admin.page-section-editor :page-id="$ownerId" />@endif
 </section>

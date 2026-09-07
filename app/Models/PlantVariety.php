@@ -15,4 +15,13 @@ class PlantVariety extends Model
     public function brand() { return $this->belongsTo(Brand::class); }
     public function specimens() { return $this->hasMany(PlantSpecimen::class)->orderBy('sequence'); }
     public function availableStock(): int { return $this->specimens->where('status', 'published')->sum(fn (PlantSpecimen $item) => $item->availableQuantity()); }
+    public function primaryMedia(string $collection): ?Media
+    {
+        $media = $this->mediaFor($collection)->orderByDesc('is_primary')->first();
+        if ($media || $collection !== 'mother') return $media;
+
+        $specimen = $this->specimens()->where('status', 'published')
+            ->whereColumn('stock_on_hand', '>', 'reserved_quantity')->with('media')->first();
+        return $specimen?->primaryMedia('specimen');
+    }
 }

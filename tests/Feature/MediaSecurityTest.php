@@ -42,6 +42,14 @@ class MediaSecurityTest extends TestCase
         app(MediaService::class)->delete($media);Storage::disk('public')->assertMissing($media->path);foreach($media->variants as $path)Storage::disk('public')->assertMissing($path);
     }
 
+    public function test_first_uploaded_image_becomes_primary_automatically():void
+    {
+        Storage::fake('public');[$brand,$home]=$this->fixture();app(BrandContext::class)->set($brand);
+        $first=app(MediaService::class)->store($home,UploadedFile::fake()->image('first.jpg'),'gallery');
+        $second=app(MediaService::class)->store($home,UploadedFile::fake()->image('second.jpg'),'gallery');
+        $this->assertTrue($first->is_primary);$this->assertFalse($second->is_primary);$this->assertSame($first->id,$home->primaryMedia('gallery')->id);
+    }
+
     public function test_media_rejects_forged_image_and_invalid_collection():void
     {
         Storage::fake('public');[$brand,$home]=$this->fixture();app(BrandContext::class)->set($brand);
