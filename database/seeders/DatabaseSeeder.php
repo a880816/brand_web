@@ -39,11 +39,9 @@ class DatabaseSeeder extends Seeder
                 'bank_account_number' => '000000000000', 'remittance_notice' => '此為本機展示帳戶，請勿實際匯款。',
             ]);
 
-            if ($brand->courses()->exists()) continue;
-
-            $course = Course::create([
-                'brand_id' => $brand->id, 'name' => $index ? '季節植栽創作' : '觀葉植物照顧入門',
-                'slug' => $index ? 'seasonal-planting' : 'foliage-basics',
+            $courseSlug = $index ? 'seasonal-planting' : 'foliage-basics';
+            $course = Course::updateOrCreate(['brand_id' => $brand->id, 'slug' => $courseSlug], [
+                'name' => $index ? '季節植栽創作' : '觀葉植物照顧入門',
                 'summary' => '從植物特性與日常照顧開始，完成一份可以帶回家的作品。',
                 'description' => '課程包含示範、實作與照顧說明，適合沒有經驗的參與者。',
                 'suitable_for' => '初次接觸植物與想建立照顧基礎的人。',
@@ -51,8 +49,8 @@ class DatabaseSeeder extends Seeder
                 'duration_minutes' => 120, 'price_amount' => 1000, 'sort_order' => 0,
                 'status' => 'published', 'published_at' => now(),
             ]);
-            $plan = $course->plans()->create(['brand_id' => $brand->id, 'name' => '單人方案', 'participants' => 1, 'price' => 1000, 'sort_order' => 0, 'is_enabled' => true]);
-            $course->sessions()->create([
+            $course->plans()->updateOrCreate(['course_session_id' => null, 'name' => '單人方案'], ['brand_id' => $brand->id, 'participants' => 1, 'price' => 1000, 'sort_order' => 0, 'is_enabled' => true]);
+            $course->sessions()->firstOrCreate([], [
                 'brand_id' => $brand->id, 'starts_at' => now()->addWeeks(3)->setTime(14, 0),
                 'ends_at' => now()->addWeeks(3)->setTime(16, 0), 'city' => '台北市',
                 'venue_name' => $brand->name.'工作室', 'address' => '中正區展示路 1 號',
@@ -60,28 +58,27 @@ class DatabaseSeeder extends Seeder
                 'registration_close_days' => 3, 'status' => 'open',
             ]);
 
-            $variety = PlantVariety::create([
-                'brand_id' => $brand->id, 'name' => '鹿角蕨示範品種', 'scientific_name' => 'Platycerium demo',
-                'variety_code' => strtoupper($brand->slug).'-001', 'slug' => 'demo-platycerium',
+            $variety = PlantVariety::updateOrCreate(['brand_id' => $brand->id, 'slug' => 'demo-platycerium'], [
+                'name' => '鹿角蕨示範品種', 'scientific_name' => 'Platycerium demo',
+                'variety_code' => strtoupper($brand->slug).'-001',
                 'description' => '展示用的品種與母本說明。', 'care_instructions' => '明亮散射光，介質乾燥後充分澆水。',
                 'status' => 'published', 'published_at' => now(), 'sort_order' => 0,
             ]);
-            $specimen = PlantSpecimen::forceCreate([
-                'brand_id' => $brand->id, 'plant_variety_id' => $variety->id, 'sequence' => 1,
-                'custom_name' => 'A株', 'full_tag_name' => $variety->scientific_name.' '.$variety->variety_code.' A株',
-                'description' => '葉型完整的展示實株。', 'specifications' => [['name' => '板徑', 'value' => '15cm']],
-                'price' => 1200, 'stock_on_hand' => 1, 'reserved_quantity' => 0, 'sold_sequence' => 0,
-                'status' => 'published', 'published_at' => now(),
+            $specimen = PlantSpecimen::where('plant_variety_id', $variety->id)->where('sequence', 1)->first();
+            if (! $specimen) $specimen = PlantSpecimen::forceCreate([
+                'brand_id'=>$brand->id, 'plant_variety_id'=>$variety->id, 'sequence'=>1, 'custom_name'=>'A株',
+                'full_tag_name'=>$variety->scientific_name.' '.$variety->variety_code.' A株', 'description'=>'葉型完整的展示實株。',
+                'specifications'=>[['name'=>'板徑','value'=>'15cm']], 'price'=>1200, 'stock_on_hand'=>1,
+                'reserved_quantity'=>0, 'sold_sequence'=>0, 'status'=>'published', 'published_at'=>now(),
             ]);
-            $material = Material::create([
-                'brand_id' => $brand->id, 'product_code' => strtoupper($brand->slug).'-MAT-001',
-                'name' => '植栽介質包', 'slug' => 'planting-medium', 'description' => '適合觀葉植物的基礎介質。',
+            $material = Material::updateOrCreate(['brand_id' => $brand->id, 'slug' => 'planting-medium'], [
+                'product_code' => strtoupper($brand->slug).'-MAT-001', 'name' => '植栽介質包', 'description' => '適合觀葉植物的基礎介質。',
                 'specifications' => [['name' => '容量', 'value' => '2L']], 'price' => 180,
                 'stock_on_hand' => 10, 'reserved_quantity' => 0, 'low_stock_threshold' => 3,
                 'status' => 'published', 'published_at' => now(),
             ]);
 
-            $homepage = HomepageContent::create(['brand_id' => $brand->id, 'draft_data' => [], 'published_data' => [], 'published_at' => now()]);
+            $homepage = HomepageContent::firstOrCreate(['brand_id' => $brand->id], ['draft_data' => [], 'published_data' => [], 'published_at' => now()]);
             $homepageData = [
                 'hero_title' => $index ? '讓植物與器物，慢慢成為日常' : '把一方綠意，安放進生活',
                 'hero_subtitle' => '手作課程、植株與資材，由品牌後台獨立維護。',
@@ -102,6 +99,7 @@ class DatabaseSeeder extends Seeder
 
     private function addDemoMedia(Brand $brand, object $owner, string $collection): void
     {
+        if ($owner->mediaFor($collection)->exists()) return;
         $source = public_path('demo/botanical-studio.png');
         if (! is_file($source)) return;
         $path = 'brands/'.$brand->id.'/'.$collection.'/demo-'.$owner->getTable().'-'.$owner->id.'.png';
