@@ -55,7 +55,7 @@ class SiteController extends Controller
     public function course(string $slug)
     {
         $course = $this->context->brand()->courses()->published()->where('slug', $slug)
-            ->with(['plans', 'sessions' => fn ($query) => $query->where('ends_at', '>=', now())->where('status', '!=', 'cancelled')->with(['plans', 'registrations'])])
+            ->with(['plans', 'sessions' => fn ($query) => $query->where('ends_at', '>=', now())->with(['plans', 'registrations'])])
             ->firstOrFail();
 
         return view('site.courses.show', compact('course'));
@@ -86,7 +86,9 @@ class SiteController extends Controller
     {
         $material=Material::where('brand_id',$this->context->id())->published()->where('slug',$slug)->firstOrFail();return view('site.shop.material',compact('material'));
     }
-    public function about() { return view('site.about', ['page' => $this->context->brand()->pages()->with(['sections.media'])->published()->where('type', 'about')->firstOrFail()]); }
-    public function services() { return view('site.index', ['kind' => '服務', 'items' => $this->context->brand()->services()->published()->orderBy('sort_order')->get(), 'route' => 'services.show']); }
-    public function service(string $slug) { return view('site.detail', ['kind' => '服務', 'item' => $this->context->brand()->services()->published()->where('slug', $slug)->firstOrFail(), 'back' => 'services.index']); }
+
+    public function soldUnit(PlantSoldUnit $soldUnit)
+    {
+        abort_unless($soldUnit->brand_id===$this->context->id(),404);$soldUnit->load(['variety','specimen.media']);return view('site.shop.sold',compact('soldUnit'));
+    }
 }

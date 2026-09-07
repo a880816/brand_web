@@ -1,21 +1,117 @@
 <?php
+
 namespace Database\Seeders;
-use App\Models\{Brand,Course,Media,Page,Service}; use Illuminate\Database\Seeder; use Illuminate\Support\Facades\Storage;
-class DatabaseSeeder extends Seeder {
- public function run(): void {
-  $brands=[
-   ['name'=>'蕨光植研','slug'=>'verdant','domain'=>'brand-a.localhost','primary_color'=>'#315c45','secondary_color'=>'#91aa96','accent_color'=>'#d4a85f','background_color'=>'#f4f1e8','text_color'=>'#17231c','theme_settings'=>['eyebrow'=>'VERDANT BOTANICAL STUDIO','hero_title'=>'把一方綠意，安放進生活','hero_note'=>'植栽設計・空間養護・植物手作課'],'seo_title'=>'蕨光植研｜城市裡的植物生活提案','seo_description'=>'以合宜的植物、日常可行的照顧方式，陪你打造長久生長的綠意空間。'],
-   ['name'=>'土日植所','slug'=>'terracotta','domain'=>'brand-b.localhost','primary_color'=>'#8b4d35','secondary_color'=>'#c8956e','accent_color'=>'#5d7760','background_color'=>'#f7eee5','text_color'=>'#30221c','theme_settings'=>['eyebrow'=>'TERRA & LEAF','hero_title'=>'讓植物與器物，慢慢成為日常','hero_note'=>'盆器選植・居家佈置・季節課程'],'seo_title'=>'土日植所｜植物與手作器物','seo_description'=>'從植物、土壤到手作器皿，建立有溫度的居家綠景。']];
-  foreach($brands as $i=>$data){
-   if(Brand::where('slug',$data['slug'])->exists())continue;
-   $brand=Brand::create($data+['status'=>'active']);
-   $home=Page::create(['brand_id'=>$brand->id,'type'=>'home','title'=>'首頁','slug'=>'home','excerpt'=>$i?'用植物與土的質地，收藏每個緩慢生長的片刻。':'依照光線、空間與生活節奏，找到真正適合你的植物。','body'=>'我們相信植物不是短暫的裝飾，而是一段能被理解、照顧與共同成長的關係。從初次選植到日常養護，提供清楚而溫柔的陪伴。','status'=>'published','published_at'=>now()]);
-   $about=Page::create(['brand_id'=>$brand->id,'type'=>'about','title'=>'關於我們','slug'=>'about','excerpt'=>'從一株植物開始，重新感受空間與季節。','body'=>"我們是一間以植物生活為核心的小型工作室。團隊關注台灣居住環境的光線、濕度與使用習慣，挑選適合長期相處的植栽，也重視每一次服務之後，主人是否知道如何繼續照顧。\n\n我們使用清楚的照顧筆記、適度的回訪，以及能被日常執行的建議，讓綠意真正留在生活裡。",'status'=>'published','published_at'=>now()]);
-   $services=[]; foreach([['空間植栽提案','space-planting','依照採光、動線與維護條件，配置合適的植物層次。'],['到府植物健檢','plant-care','檢視介質、病蟲害與環境，提供可執行的養護計畫。'],['品牌綠意陳列','brand-display','為店鋪與活動打造具有節奏的季節植物風景。']] as $n=>$s)$services[]=Service::create(['brand_id'=>$brand->id,'name'=>$s[0],'slug'=>$s[1],'summary'=>$s[2],'description'=>$s[2]."\n\n我們會先理解現場條件與期待，再提出植物、器皿、配置及後續維護建議。每份提案都以適合長期照顧為原則。",'sort_order'=>$n,'status'=>'published','published_at'=>now()]);
-   $courses=[]; foreach([['觀葉植物照顧入門','foliage-basics','認識光線、澆水與介質，建立自己的照顧判斷。',120,1600],['苔球與桌上綠景','kokedama','用雙手感受土與植物，完成一件可帶回家的小型綠景。',150,2200],['居家植物佈置課','home-styling','從空間尺度與視線出發，練習讓植物自然融入日常。',180,2800]] as $n=>$c)$courses[]=Course::create(['brand_id'=>$brand->id,'name'=>$c[0],'slug'=>$c[1],'summary'=>$c[2],'description'=>$c[2]."\n\n課程包含示範、實作與照顧說明，適合沒有經驗的參與者。實際日期與報名方式請透過品牌社群詢問。",'location_note'=>'品牌工作室（詳細地址於確認後提供）','duration_minutes'=>$c[3],'price_amount'=>$c[4],'price_note'=>'含基本材料；特殊植物依選擇另計','sort_order'=>$n,'status'=>'published','published_at'=>now()]);
-   foreach([['instagram','Instagram','https://www.instagram.com/'],['facebook','Facebook','https://www.facebook.com/']] as $n=>$l)$brand->links()->create(['type'=>$l[0],'label'=>$l[1],'url'=>$l[2],'sort_order'=>$n,'is_enabled'=>true]);
-   foreach(array_merge([$brand,$home,$about],$services,$courses) as $owner){$collections=$owner instanceof Brand?['hero_desktop','hero_mobile','gallery']:($owner instanceof Page?['hero_desktop','gallery']:['cover','gallery']); foreach($collections as $collection)for($k=0;$k<2;$k++){ $path='brands/'.$brand->id.'/'.$collection.'/'.class_basename($owner).'-'.$owner->id.'-'.$k.'.png'; Storage::disk('public')->put($path,file_get_contents(public_path('demo/botanical-studio.png'))); Media::create(['brand_id'=>$brand->id,'mediable_type'=>$owner->getMorphClass(),'mediable_id'=>$owner->id,'collection'=>$collection,'disk'=>'public','path'=>$path,'original_filename'=>'botanical-studio.png','mime_type'=>'image/png','file_size'=>filesize(public_path('demo/botanical-studio.png')),'width'=>1536,'height'=>1024,'alt_text'=>($owner->title??$owner->name??$brand->name).' 植物情境','sort_order'=>$k,'is_primary'=>$k===0]);}}
-  }
-  $this->call([PageSectionSeeder::class,AdminUserSeeder::class]);
- }
+
+use App\Models\{Brand, Course, HomepageContent, Material, Media, PlantSpecimen, PlantVariety};
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $brands = [
+            [
+                'name' => '蕨光植研', 'slug' => 'verdant', 'domain' => 'brand-a.localhost',
+                'primary_color' => '#315c45', 'secondary_color' => '#91aa96', 'accent_color' => '#d4a85f',
+                'background_color' => '#f4f1e8', 'text_color' => '#17231c',
+                'facebook_url' => 'https://www.facebook.com/', 'instagram_url' => 'https://www.instagram.com/',
+                'theme_settings' => ['eyebrow' => 'VERDANT BOTANICAL STUDIO'],
+                'seo_title' => '蕨光植研｜城市裡的植物生活提案',
+                'seo_description' => '以植物、課程與手作資材，陪你打造長久生長的綠意生活。',
+            ],
+            [
+                'name' => '土日植所', 'slug' => 'terracotta', 'domain' => 'brand-b.localhost',
+                'primary_color' => '#8b4d35', 'secondary_color' => '#c8956e', 'accent_color' => '#5d7760',
+                'background_color' => '#f7eee5', 'text_color' => '#30221c',
+                'facebook_url' => 'https://www.facebook.com/', 'instagram_url' => 'https://www.instagram.com/',
+                'theme_settings' => ['eyebrow' => 'TERRA & LEAF'],
+                'seo_title' => '土日植所｜植物與手作器物',
+                'seo_description' => '從植物、土壤到手作器皿，建立有溫度的居家綠景。',
+            ],
+        ];
+
+        foreach ($brands as $index => $data) {
+            $brand = Brand::updateOrCreate(['slug' => $data['slug']], $data + [
+                'status' => 'active', 'home_menu_label' => '首頁', 'courses_menu_label' => '手作課程',
+                'shop_menu_label' => '線上商店', 'bank_name' => '本機展示銀行', 'bank_code' => '000',
+                'bank_branch' => '展示分行', 'bank_account_name' => $data['name'],
+                'bank_account_number' => '000000000000', 'remittance_notice' => '此為本機展示帳戶，請勿實際匯款。',
+            ]);
+
+            if ($brand->courses()->exists()) continue;
+
+            $course = Course::create([
+                'brand_id' => $brand->id, 'name' => $index ? '季節植栽創作' : '觀葉植物照顧入門',
+                'slug' => $index ? 'seasonal-planting' : 'foliage-basics',
+                'summary' => '從植物特性與日常照顧開始，完成一份可以帶回家的作品。',
+                'description' => '課程包含示範、實作與照顧說明，適合沒有經驗的參與者。',
+                'suitable_for' => '初次接觸植物與想建立照顧基礎的人。',
+                'precautions' => '請穿著方便活動的服裝並準時抵達。',
+                'duration_minutes' => 120, 'price_amount' => 1000, 'sort_order' => 0,
+                'status' => 'published', 'published_at' => now(),
+            ]);
+            $plan = $course->plans()->create(['brand_id' => $brand->id, 'name' => '單人方案', 'participants' => 1, 'price' => 1000, 'sort_order' => 0, 'is_enabled' => true]);
+            $course->sessions()->create([
+                'brand_id' => $brand->id, 'starts_at' => now()->addWeeks(3)->setTime(14, 0),
+                'ends_at' => now()->addWeeks(3)->setTime(16, 0), 'city' => '台北市',
+                'venue_name' => $brand->name.'工作室', 'address' => '中正區展示路 1 號',
+                'google_maps_url' => 'https://maps.google.com/?q=Taipei', 'capacity' => 8,
+                'registration_close_days' => 3, 'status' => 'open',
+            ]);
+
+            $variety = PlantVariety::create([
+                'brand_id' => $brand->id, 'name' => '鹿角蕨示範品種', 'scientific_name' => 'Platycerium demo',
+                'variety_code' => strtoupper($brand->slug).'-001', 'slug' => 'demo-platycerium',
+                'description' => '展示用的品種與母本說明。', 'care_instructions' => '明亮散射光，介質乾燥後充分澆水。',
+                'status' => 'published', 'published_at' => now(), 'sort_order' => 0,
+            ]);
+            $specimen = PlantSpecimen::forceCreate([
+                'brand_id' => $brand->id, 'plant_variety_id' => $variety->id, 'sequence' => 1,
+                'custom_name' => 'A株', 'full_tag_name' => $variety->scientific_name.' '.$variety->variety_code.' A株',
+                'description' => '葉型完整的展示實株。', 'specifications' => [['name' => '板徑', 'value' => '15cm']],
+                'price' => 1200, 'stock_on_hand' => 1, 'reserved_quantity' => 0, 'sold_sequence' => 0,
+                'status' => 'published', 'published_at' => now(),
+            ]);
+            $material = Material::create([
+                'brand_id' => $brand->id, 'product_code' => strtoupper($brand->slug).'-MAT-001',
+                'name' => '植栽介質包', 'slug' => 'planting-medium', 'description' => '適合觀葉植物的基礎介質。',
+                'specifications' => [['name' => '容量', 'value' => '2L']], 'price' => 180,
+                'stock_on_hand' => 10, 'reserved_quantity' => 0, 'low_stock_threshold' => 3,
+                'status' => 'published', 'published_at' => now(),
+            ]);
+
+            $homepage = HomepageContent::create(['brand_id' => $brand->id, 'draft_data' => [], 'published_data' => [], 'published_at' => now()]);
+            $homepageData = [
+                'hero_title' => $index ? '讓植物與器物，慢慢成為日常' : '把一方綠意，安放進生活',
+                'hero_subtitle' => '手作課程、植株與資材，由品牌後台獨立維護。',
+                'hero_primary_label' => '探索課程', 'hero_secondary_label' => '逛逛商店',
+                'intro_title' => '與植物一起生活', 'intro_body' => '從一株植物開始，找到適合自己的照顧節奏。',
+                'featured_course_ids' => [$course->id], 'featured_product_keys' => ['plant:'.$variety->id, 'material:'.$material->id],
+                'gallery_items' => [],
+            ];
+            $homepage->update(['draft_data' => $homepageData, 'published_data' => $homepageData]);
+
+            foreach ([[$homepage, 'hero_desktop'], [$homepage, 'gallery'], [$course, 'cover'], [$variety, 'mother'], [$specimen, 'specimen'], [$material, 'cover']] as [$owner, $collection]) {
+                $this->addDemoMedia($brand, $owner, $collection);
+            }
+        }
+
+        $this->call(AdminUserSeeder::class);
+    }
+
+    private function addDemoMedia(Brand $brand, object $owner, string $collection): void
+    {
+        $source = public_path('demo/botanical-studio.png');
+        if (! is_file($source)) return;
+        $path = 'brands/'.$brand->id.'/'.$collection.'/demo-'.$owner->getTable().'-'.$owner->id.'.png';
+        Storage::disk('public')->put($path, file_get_contents($source));
+        [$width, $height] = getimagesize($source);
+        Media::create([
+            'brand_id' => $brand->id, 'mediable_type' => $owner->getMorphClass(), 'mediable_id' => $owner->id,
+            'collection' => $collection, 'disk' => 'public', 'path' => $path,
+            'original_filename' => 'botanical-studio.png', 'mime_type' => 'image/png', 'file_size' => filesize($source),
+            'width' => $width, 'height' => $height, 'alt_text' => $brand->name.'展示圖片', 'sort_order' => 0, 'is_primary' => true,
+        ]);
+    }
 }

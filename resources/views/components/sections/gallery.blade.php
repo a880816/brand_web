@@ -1,5 +1,0 @@
-@props(['section'])
-@php($images=$section->mediaFor('gallery')->get())
-<section class="section section-gallery section-variant-{{ $section->variant }}">@if($section->heading)<div class="section-head"><h2>{{ $section->heading }}</h2></div>@endif @if($section->body)<p class="section-lead">{{ $section->body }}</p>@endif
- @if($images->isNotEmpty())<div class="swiper js-swiper" data-autoplay="{{ data_get($section->settings,'autoplay')?'true':'false' }}"><div class="swiper-wrapper">@foreach($images as $image)<div class="swiper-slide"><img src="{{ $image->url('detail') }}" @if($image->srcset()) srcset="{{ $image->srcset() }}" sizes="(max-width: 767px) 86vw, 45vw" @endif alt="{{ $image->alt_text ?: $section->heading }}" width="{{ $image->width }}" height="{{ $image->height }}" loading="lazy">@if($image->title)<p>{{ $image->title }}</p>@endif</div>@endforeach</div><button class="swiper-button-prev" aria-label="上一張照片"></button><button class="swiper-button-next" aria-label="下一張照片"></button><div class="swiper-pagination" aria-label="照片頁次"></div></div>@else<p class="empty">尚未上傳輪播照片。</p>@endif
-</section>

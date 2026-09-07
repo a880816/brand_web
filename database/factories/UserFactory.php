@@ -9,7 +9,7 @@ class UserFactory extends Factory
 {
     public function definition(): array
     {
-        return ['name'=>fake()->name(),'email'=>fake()->unique()->safeEmail(),'email_verified_at'=>now(),'password'=>Hash::make('TestingPassword!'),'role'=>'member','status'=>'active'];
+        return ['name'=>fake()->name(),'email'=>fake()->unique()->safeEmail(),'email_verified_at'=>now(),'password'=>Hash::make('TestingPassword!'),'role'=>'brand_admin','status'=>'active'];
     }
 
     public function brandAdmin(): static { return $this->state(['role'=>'brand_admin']); }

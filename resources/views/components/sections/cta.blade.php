@@ -1,2 +1,0 @@
-@props(['section'])
-<section class="contact-strip section-variant-{{ $section->variant }}"><h2>{{ $section->heading }}</h2>@if($section->body)<p>{{ $section->body }}</p>@endif @if(data_get($section->settings,'button_label') && data_get($section->settings,'button_url'))<a class="button" href="{{ data_get($section->settings,'button_url') }}">{{ data_get($section->settings,'button_label') }}</a>@endif</section>

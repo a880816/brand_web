@@ -19,7 +19,6 @@ class AdminUserSeeder extends Seeder
             ['name'=>'總管理者','email'=>'super_admin@example.test','role'=>'super_admin'],
             ['name'=>'品牌 A 管理者','email'=>'brand_admin_a@example.test','role'=>'brand_admin','brand'=>'verdant'],
             ['name'=>'品牌 B 管理者','email'=>'brand_admin_b@example.test','role'=>'brand_admin','brand'=>'terracotta'],
-            ['name'=>'一般會員','email'=>'member@example.test','role'=>'member'],
         ];
         foreach ($accounts as $account) {
             $user = User::updateOrCreate(['email'=>$account['email']], ['name'=>$account['name'],'password'=>Hash::make($password),'role'=>$account['role'],'status'=>'active','email_verified_at'=>now()]);

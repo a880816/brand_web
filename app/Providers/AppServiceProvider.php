@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use App\Http\Middleware\{EnsureAccountActive, ResolveAdminBrand, ResolveBrand};
 use App\Support\BrandContext;
-use App\Models\{Brand,BrandLink,Course,CoursePlan,CourseRegistration,CourseSession,HomepageContent,Material,Media,Page,PageSection,PlantSpecimen,PlantVariety,SaleOrder,SaleOrderItem,Service,User};
+use App\Models\{Brand,Course,CoursePlan,CourseRegistration,CourseSession,HomepageContent,Material,Media,PlantSpecimen,PlantVariety,SaleOrder,SaleOrderItem,User};
 use App\Policies\{BrandPolicy,TenantContentPolicy,UserPolicy};
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        foreach ([Page::class,PageSection::class,Service::class,Course::class,CoursePlan::class,CourseRegistration::class,CourseSession::class,HomepageContent::class,Material::class,Media::class,PlantSpecimen::class,PlantVariety::class,SaleOrder::class,SaleOrderItem::class,BrandLink::class] as $model) Gate::policy($model,TenantContentPolicy::class);
+        foreach ([Course::class,CoursePlan::class,CourseRegistration::class,CourseSession::class,HomepageContent::class,Material::class,Media::class,PlantSpecimen::class,PlantVariety::class,SaleOrder::class,SaleOrderItem::class] as $model) Gate::policy($model,TenantContentPolicy::class);
         Gate::policy(Brand::class,BrandPolicy::class);
         Gate::policy(User::class,UserPolicy::class);
         Livewire::addPersistentMiddleware([

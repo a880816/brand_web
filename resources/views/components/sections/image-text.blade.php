@@ -1,2 +1,0 @@
-@props(['section'])
-<section class="section section-image-text section-variant-{{ $section->variant }}"><div>@if($section->heading)<h2>{{ $section->heading }}</h2>@endif @if($section->body)<div class="prose">@foreach(preg_split('/\n\n+/', $section->body) as $paragraph)<p>{{ $paragraph }}</p>@endforeach</div>@endif</div><x-media-image :media="$section->primaryMedia('image')" ratio="4/3" /></section>

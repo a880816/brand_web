@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\{BrandController,BrandLinkController,BrandSettingsController,BrandSwitchController,ContentController,CourseController,CourseSessionController,DashboardController,HomepageController,MaterialController,MediaLibraryController,PlantSpecimenController,PlantVarietyController,PreviewController,ProfileController,UserController};
+use App\Http\Controllers\Admin\{BrandController,BrandSettingsController,BrandSwitchController,CourseController,CourseSessionController,DashboardController,HomepageController,MaterialController,MediaLibraryController,PlantSpecimenController,PlantVarietyController,ProfileController,UserController};
 use App\Http\Controllers\Admin\CourseRegistrationController as AdminCourseRegistrationController;
 use App\Http\Controllers\Admin\SaleOrderController;
 use App\Http\Controllers\{AuthController,CourseNoticeController,CourseNoticeQrController,CourseRegistrationController,OrderRecipientController,SiteController};
@@ -25,10 +25,6 @@ Route::middleware('brand')->group(function () {
         Route::post('/switch-brand/{brand}',BrandSwitchController::class)->name('switch-brand');
         Route::get('/settings',[BrandSettingsController::class,'edit'])->name('settings');
         Route::put('/settings',[BrandSettingsController::class,'update'])->name('settings.update');
-        Route::get('/links',[BrandLinkController::class,'index'])->name('links.index');
-        Route::post('/links',[BrandLinkController::class,'store'])->name('links.store');
-        Route::put('/links/{link}',[BrandLinkController::class,'update'])->name('links.update');
-        Route::delete('/links/{link}',[BrandLinkController::class,'destroy'])->name('links.destroy');
         Route::get('/media',[MediaLibraryController::class,'index'])->name('media.index');
         Route::put('/media/{id}',[MediaLibraryController::class,'update'])->name('media.update');
         Route::delete('/media/{id}',[MediaLibraryController::class,'destroy'])->name('media.destroy');
@@ -68,33 +64,22 @@ Route::middleware('brand')->group(function () {
         Route::delete('/orders/{order}',[SaleOrderController::class,'destroy'])->name('orders.destroy');
         Route::resource('brands',BrandController::class)->except('show');
         Route::resource('users',UserController::class)->only(['index','create','store','edit','update']);
-        Route::get('/{resource}',[ContentController::class,'index'])->name('content.index')->where('resource','pages|services');
-        Route::get('/{resource}/create',[ContentController::class,'create'])->name('content.create')->where('resource','pages|services');
-        Route::post('/{resource}',[ContentController::class,'store'])->name('content.store')->where('resource','pages|services');
-        Route::get('/{resource}/{id}/edit',[ContentController::class,'edit'])->name('content.edit')->where('resource','pages|services');
-        Route::put('/{resource}/{id}',[ContentController::class,'update'])->name('content.update')->where('resource','pages|services');
-        Route::post('/{resource}/{id}/publish',[ContentController::class,'publish'])->name('content.publish')->where('resource','pages|services');
-        Route::post('/{resource}/{id}/unpublish',[ContentController::class,'unpublish'])->name('content.unpublish')->where('resource','pages|services');
-        Route::get('/{resource}/{id}/preview',PreviewController::class)->name('content.preview')->where('resource','pages|services');
-        Route::delete('/{resource}/{id}',[ContentController::class,'destroy'])->name('content.destroy')->where('resource','pages|services');
     });
 
     Route::get('/',[SiteController::class,'home'])->name('home');
-    Route::get('/about',[SiteController::class,'about'])->name('about');
-    Route::get('/services',[SiteController::class,'services'])->name('services.index');
-    Route::get('/services/{slug}',[SiteController::class,'service'])->name('services.show');
     Route::get('/courses',[SiteController::class,'courses'])->name('courses.index');
     Route::get('/courses/{slug}',[SiteController::class,'course'])->name('courses.show');
     Route::get('/courses/{slug}/sessions/{session}/register',[CourseRegistrationController::class,'create'])->name('registrations.create');
-    Route::post('/courses/{slug}/sessions/{session}/register',[CourseRegistrationController::class,'store'])->name('registrations.store');
+    Route::post('/courses/{slug}/sessions/{session}/register',[CourseRegistrationController::class,'store'])->middleware('throttle:10,1')->name('registrations.store');
     Route::get('/registrations/{reference}',[CourseRegistrationController::class,'show'])->name('registrations.show');
     Route::get('/course-notice/{slug}',CourseNoticeController::class)->name('course-notice.show');
     Route::get('/course-notice/{slug}/qr.svg',CourseNoticeQrController::class)->name('course-notice.qr');
     Route::get('/order-recipient/{reference}/{token}',[OrderRecipientController::class,'edit'])->name('order-recipient.edit');
-    Route::put('/order-recipient/{reference}/{token}',[OrderRecipientController::class,'update'])->name('order-recipient.update');
+    Route::put('/order-recipient/{reference}/{token}',[OrderRecipientController::class,'update'])->middleware('throttle:10,1')->name('order-recipient.update');
     Route::get('/shop',[SiteController::class,'shop'])->name('shop.index');
     Route::get('/shop/plants/{slug}',[SiteController::class,'plant'])->name('shop.plants.show');
     Route::get('/shop/plants/{slug}/specimens/{specimen}',[SiteController::class,'specimen'])->name('shop.specimens.show');
     Route::get('/shop/materials/{slug}',[SiteController::class,'material'])->name('shop.materials.show');
+    Route::get('/shop/sold/{soldUnit}',[SiteController::class,'soldUnit'])->name('shop.sold.show');
     Route::fallback(fn()=>abort(404));
 });

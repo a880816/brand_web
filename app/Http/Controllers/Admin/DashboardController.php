@@ -10,7 +10,6 @@ class DashboardController extends Controller
 {
     public function __invoke(BrandContext $context)
     {
-        if(auth()->user()->role==='member')return redirect()->route('admin.profile');
         $brandId=$context->id();$monthStart=now()->startOfMonth();
         $paid=SaleOrder::where('brand_id',$brandId)->where('status','paid')->where('paid_at','>=',$monthStart);
         $stats=[

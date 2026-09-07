@@ -60,7 +60,7 @@ class ShopCatalogTest extends TestCase
         $response=$this->get('http://brand-a.localhost/shop')->assertOk()->assertSee('在庫 2')->assertSee('NT$ 1,500 起')->assertSee('售完');
         $this->assertLessThan(strpos($response->getContent(),'售完品種'),strpos($response->getContent(),'皇冠鹿角蕨'));
         $this->get('http://brand-a.localhost/shop/plants/ridleyi')->assertOk()->assertSee('實株 1');
-        $this->get('http://brand-a.localhost/shop/plants/ridleyi/specimens/'.$specimen->id)->assertOk()->assertSee('複製商品連結');
+        $this->get('http://brand-a.localhost/shop/plants/ridleyi/specimens/'.$specimen->id)->assertOk()->assertSee('聯絡購買')->assertSee('皇冠鹿角蕨');
         $this->get('http://brand-a.localhost/shop/materials/moss')->assertOk()->assertSee('售完');
     }
 }
